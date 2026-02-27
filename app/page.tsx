@@ -304,7 +304,6 @@ export default function Home() {
           color: var(--gray);
         }
 
-        /* PLAYER */
         .player-section {
           margin-bottom: 28px;
           padding: 16px;
@@ -398,7 +397,6 @@ export default function Home() {
           cursor: pointer;
         }
 
-        /* filled track behind the range */
         .progress-fill-track {
           position: absolute;
           left: 0;
@@ -464,7 +462,6 @@ export default function Home() {
           box-shadow: 0 0 0 1.5px var(--black);
         }
 
-        /* volume row */
         .volume-row {
           display: flex;
           align-items: center;
