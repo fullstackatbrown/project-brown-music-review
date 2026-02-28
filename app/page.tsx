@@ -583,9 +583,9 @@ export default function Home() {
               <span className="category-tag">Album Review</span>
 
               <h2 className="review-title">
-                <em>Josh Ta</em>
+                <em>Album Name</em>
                 <br />
-                Da Most Beautiful Art
+                Some description
               </h2>
 
               <p className="review-author">
