@@ -680,7 +680,7 @@ export default function Home() {
                       onMouseDown={handleSeekStart}
                       onTouchStart={handleSeekStart}
                       onChange={handleSeekChange}
-                      onMouseUp={handleSeekCommit}
+                      onMouseUp={handleSeekCommit as any}
                       onTouchEnd={handleSeekCommit as any}
                     />
                   </div>
