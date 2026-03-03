@@ -1,4 +1,5 @@
 "use client";
+import EmailSignup from "./components/EmailSignup";
 import { useState, useRef, useEffect } from "react";
 
 function formatTime(s: number) {
@@ -84,11 +85,11 @@ export default function Home() {
           margin: 0;
           background: var(--white);
           font-family: 'DM Sans', sans-serif;
-          overflow: hidden;
+          overflow: auto;
         }
 
         .page {
-          height: 100vh;
+          min-height: 100vh
           width: 100vw;
           background: var(--white);
           display: flex;
@@ -719,7 +720,8 @@ export default function Home() {
                 <button className="spin-hint" onClick={toggleSpin}>
                   {spinning ? "⏸ Stop" : "▶ Spin"}
                 </button>
-              </div>
+              </div>  
+              <EmailSignup />  
             </div>
           </div>
         </div>
