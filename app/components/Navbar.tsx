@@ -1,26 +1,38 @@
+"use client"
 import Link from "next/link";
+import Image from "next/image";
+import bmr_logo from "@/public/bmr_logo.webp";
+
+interface Page {
+    name: string,
+    path: string
+}
+
+const pages: Page[] = [
+    {name: "Deep Dive", path: "/deepdive"},
+    {name: "Opinions", path: "/opinions"},
+    {name: "Narratives", path: "/narratives"},
+    {name: "Hot Topics", path: "/hottopics"},
+]
 
 export default function Navbar() {
-  return (
-    <nav className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
-      <div className="w-16 h-10 bg-gray-200 flex items-center justify-center text-sm text-gray-500">
-        logo
-      </div>
+    return (<header className="flex fixed top-0 left-0 w-full z-50 bg-background py-7">
+        <div className="fixed left-15">
+            <Link href="/">
+                <Image src={bmr_logo} alt="Brown Music Review logo" width={50}/>
+            </Link>
+        </div>
+        <div className="fixed right-15 flex gap-15 items-center text-sm">
+            {pages.map((page, i) => (
+                <Link href={page.path} key={i} className="transition-colors hover:text-hover-color">
+                    {page.name}
+                </Link>
+            ))}
 
-      <div className="flex items-center gap-6">
-        <Link href="/" className="text-sm text-gray-800 hover:underline">
-          Page
-        </Link>
-        <Link href="/" className="text-sm text-gray-800 hover:underline">
-          Page
-        </Link>
-        <Link href="/" className="text-sm text-gray-800 hover:underline">
-          Page
-        </Link>
-        <button className="bg-black text-white text-sm px-4 py-2 rounded-md">
-          Button
-        </button>
-      </div>
-    </nav>
-  );
+            <button className="bg-foreground text-background rounded-sm py-1.5 px-3"
+                onClick={() => alert("Button")}>
+                Button
+            </button>
+        </div>
+    </header>);
 }
