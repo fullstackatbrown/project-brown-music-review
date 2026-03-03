@@ -716,7 +716,7 @@ export default function Home() {
               </div>
 
               <div className="btn-row">
-                <button className="read-more">Read Full Review</button>
+                <a href="/reviews/sample-review" className="read-more">Read Full Review</a>
                 <button className="spin-hint" onClick={toggleSpin}>
                   {spinning ? "⏸ Stop" : "▶ Spin"}
                 </button>
