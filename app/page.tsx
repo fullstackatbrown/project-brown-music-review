@@ -572,7 +572,7 @@ export default function Home() {
                 </div>
               </div>
               <img
-                src="/tmp_album.jpeg"
+                src="/Pink-Floyd-Dark-Side-Of-The-Moon.png"
                 alt="Album cover"
                 className="album-cover"
               />
