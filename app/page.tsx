@@ -1,998 +1,1065 @@
 "use client";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
+import SplashCursor from "../components/SplashCursor";
 
-function formatTime(s: number) {
-  if (!isFinite(s)) return "0:00";
-  const m = Math.floor(s / 60);
-  const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, "0")}`;
-}
+const RATING_LABELS: Record<number, string> = {
+  1: "trash it",
+  2: "skip it",
+  3: "rent it",
+  4: "buy it",
+  5: "crown it",
+};
 
 const albums = [
   {
     id: 0,
     cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
     title: "Californication",
-    subtitle: "",
-    artist: "Red Hot Chilli Peppers",
-    year: "1973",
-    genre: "Prog Rock",
-    rating: 5,
-    ratingHalf: false,
+    subtitle: null,
+    artist: "Red Hot Chili Peppers",
+    year: "1999",
+    genre: "Alternative Rock",
+    rating: 4,
     tag: "Album Review",
-    labelColor: "#e01010",
-    accentColor: "#e01010",
-    href: "/reviews/dark-side",
-    vinylLabel: "HVT",
+    accentColor: "#c8102e",
+    labelColor: "#c8102e",
+    vinylLabel: "WBR",
     song: "/tmp_song.mp3",
+    reviewer: "Bryan Chung",
+    blurb:
+      "A sunburned, introspective record that trades manic energy for something wistful and weathered. Frusciante's return breathes life into every track.",
   },
   {
     id: 1,
     cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
-    title: "Good kid, Maad City",
-    subtitle: "",
+    title: "Good Kid, M.A.A.D City",
+    subtitle: null,
     artist: "Kendrick Lamar",
-    year: "1977",
-    genre: "Rap",
+    year: "2012",
+    genre: "Hip-Hop",
     rating: 5,
-    ratingHalf: true,
     tag: "Staff Pick",
-    labelColor: "#1a6b3c",
     accentColor: "#1a6b3c",
-    href: "/reviews/rumours",
-    vinylLabel: "WBR",
+    labelColor: "#1a6b3c",
+    vinylLabel: "TDE",
     song: "/tmp_song.mp3",
+    reviewer: "Bryan Chung",
+    blurb:
+      "A short film disguised as an album, shot entirely through memory and guilt. The Compton he paints breathes and threatens and loves all at once.",
   },
   {
     id: 2,
     cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
-    title: "To Pimp",
-    subtitle: "a Butterfly",
+    title: "To Pimp a Butterfly",
+    subtitle: null,
     artist: "Kendrick Lamar",
     year: "2015",
-    genre: "Hip-Hop",
+    genre: "Hip-Hop / Jazz / Funk",
     rating: 5,
-    ratingHalf: false,
     tag: "Classic",
-    labelColor: "#d4a017",
-    accentColor: "#d4a017",
-    href: "/reviews/tpab",
+    accentColor: "#b8860b",
+    labelColor: "#b8860b",
     vinylLabel: "TDE",
     song: "/tmp_song.mp3",
+    reviewer: "Bryan Chung",
+    blurb:
+      "Not an album — a reckoning. A sprawling, jazz-funk treatise on Blackness, fame, and self-destruction that left critics reaching for new vocabulary.",
   },
   {
     id: 3,
     cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
-    title: "Untitled",
-    subtitle: "Unmastered",
+    title: "Untitled Unmastered",
+    subtitle: null,
     artist: "Kendrick Lamar",
-    year: "1971",
-    genre: "Folk / Singer-Songwriter",
-    rating: 5,
-    ratingHalf: false,
+    year: "2016",
+    genre: "Hip-Hop",
+    rating: 3,
     tag: "Revisited",
-    labelColor: "#2563eb",
-    accentColor: "#2563eb",
-    href: "/reviews/blue",
-    vinylLabel: "REP",
+    accentColor: "#1d3f8a",
+    labelColor: "#1d3f8a",
+    vinylLabel: "TDE",
     song: "/tmp_song.mp3",
+    reviewer: "Bryan Chung",
+    blurb:
+      "Eight untitled demos that would be another artist's career highlight. A rare glimpse at Kendrick thinking out loud, pencil sketches in place of stone.",
+  },
+  {
+    id: 4,
+    cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
+    title: "Mr Morale and the Big Steppers",
+    subtitle: null,
+    artist: "Kendrick ",
+    year: "1997",
+    genre: "Art Rock",
+    rating: 5,
+    tag: "Essential",
+    accentColor: "#5c2d91",
+    labelColor: "#5c2d91",
+    vinylLabel: "PAR",
+    song: "/tmp_song.mp3",
+    reviewer: "Bryan Chung",
+    blurb:
+      "Twenty-eight years later it sounds more prescient than ever. A document of alienation built from guitars and dread, still unmatched in its ambition.",
+  },
+  {
+    id: 5,
+    cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
+    title: "Section 80",
+    subtitle: null,
+    artist: "Kendrick Lamar",
+    year: "1998",
+    genre: "R&B / Soul / Hip-Hop",
+    rating: 5,
+    tag: "Cornerstone",
+    accentColor: "#8b1a00",
+    labelColor: "#8b1a00",
+    vinylLabel: "RUF",
+    song: "/tmp_song.mp3",
+    reviewer: "Bryan Chung",
+    blurb:
+      "An album that arrived fully formed and has never been equaled. Hill performs the impossible: making raw heartbreak sound like catechism.",
   },
 ];
 
-export default function Home() {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [prevIdx, setPrevIdx] = useState<number | null>(null);
-  const [transitioning, setTransitioning] = useState(false);
-  const [direction, setDirection] = useState<"up" | "down">("down");
-
-  const [spinning, setSpinning] = useState(false);
-  const [volume, setVolume] = useState(0.7);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [seeking, setSeeking] = useState(false);
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const scrollAccum = useRef(0);
-  const lastScrollTime = useRef(0);
-
-  const album = albums[activeIdx];
-
-  const navigate = useCallback(
-    (dir: "up" | "down") => {
-      if (transitioning) return;
-      const next =
-        dir === "down"
-          ? Math.min(activeIdx + 1, albums.length - 1)
-          : Math.max(activeIdx - 1, 0);
-      if (next === activeIdx) return;
-
-      setDirection(dir);
-      setPrevIdx(activeIdx);
-      setTransitioning(true);
-      setActiveIdx(next);
-      setSpinning(false);
-      setProgress(0);
-      setCurrentTime(0);
-
-      setTimeout(() => {
-        setTransitioning(false);
-        setPrevIdx(null);
-      }, 700);
-    },
-    [activeIdx, transitioning],
-  );
-
-  // Global wheel — whole window
-  useEffect(() => {
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const now = Date.now();
-      // Hard cooldown: ignore all events for 900ms after a navigation
-      if (now - lastScrollTime.current < 900) return;
-      scrollAccum.current += e.deltaY;
-      if (Math.abs(scrollAccum.current) > 80) {
-        lastScrollTime.current = now;
-        navigate(scrollAccum.current > 0 ? "down" : "up");
-        scrollAccum.current = 0;
+function VinylDisc({
+  color,
+  label,
+  spinning,
+  size = 80,
+}: {
+  color: string;
+  label: string;
+  spinning: boolean;
+  size?: number;
+}) {
+  return (
+    <motion.div
+      animate={{ rotate: spinning ? 360 : 0 }}
+      transition={
+        spinning
+          ? { repeat: Infinity, duration: 2.6, ease: "linear" }
+          : { duration: 0.3 }
       }
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background:
+          "radial-gradient(circle at 50%, #2a2a2a 0%, #111 35%, #060606 100%)",
+        boxShadow: "0 2px 18px rgba(0,0,0,0.5)",
+        position: "relative",
+        flexShrink: 0,
+        overflow: "hidden",
+      }}
+    >
+      <SplashCursor />
+
+      {/* Groove rings */}
+      {[0.72, 0.58, 0.46].map((r) => (
+        <div
+          key={r}
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%,-50%)",
+            width: `${r * 100}%`,
+            height: `${r * 100}%`,
+            borderRadius: "50%",
+            border: "1px solid rgba(255,255,255,0.04)",
+          }}
+        />
+      ))}
+      {/* Sheen */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "50%",
+          background:
+            "conic-gradient(from 30deg, rgba(255,255,255,0) 0deg, rgba(255,255,255,0.06) 40deg, rgba(255,255,255,0) 80deg, rgba(255,255,255,0.03) 200deg, rgba(255,255,255,0) 360deg)",
+        }}
+      />
+      {/* Center label */}
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%,-50%)",
+          width: "28%",
+          height: "28%",
+          borderRadius: "50%",
+          background: color,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 1,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: size * 0.055,
+            color: "#fff",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            lineHeight: 1,
+          }}
+        >
+          {label}
+        </span>
+        <div
+          style={{
+            width: size * 0.04,
+            height: size * 0.04,
+            borderRadius: "50%",
+            background: "#0a0a0a",
+          }}
+        />
+      </div>
+    </motion.div>
+  );
+}
+
+function ReviewRow({
+  album,
+  index,
+  onOpen,
+}: {
+  album: (typeof albums)[0];
+  index: number;
+  onOpen: (id: number) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
+
+  const ratingWord = RATING_LABELS[album.rating];
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 32 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{
+        duration: 0.55,
+        delay: index * 0.07,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+      onClick={() => onOpen(album.id)}
+      style={{
+        display: "grid",
+        gridTemplateColumns: "52px 96px 1fr auto auto",
+        alignItems: "center",
+        gap: "0 24px",
+        padding: "20px 0",
+        borderBottom: "1px solid #e2e2e2",
+        cursor: "pointer",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Hover fill */}
+      <motion.div
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: hovered ? 1 : 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: album.accentColor,
+          transformOrigin: "left",
+          zIndex: 0,
+          opacity: 0.04,
+        }}
+      />
+
+      {/* Index */}
+      <span
+        style={{
+          fontFamily: "'DM Mono', monospace",
+          fontSize: "0.62rem",
+          color: hovered ? album.accentColor : "#bbb",
+          letterSpacing: "0.1em",
+          zIndex: 1,
+          transition: "color 0.2s",
+          textAlign: "right",
+          paddingRight: 4,
+        }}
+      >
+        {String(index + 1).padStart(2, "0")}
+      </span>
+
+      {/* Vinyl + cover stack */}
+      <div
+        style={{
+          position: "relative",
+          width: 96,
+          height: 64,
+          zIndex: 1,
+          flexShrink: 0,
+        }}
+      >
+        {/* Album cover */}
+        <motion.img
+          src={album.cover}
+          alt={album.title}
+          animate={{ x: hovered ? -8 : 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            position: "absolute",
+            left: 0,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: 64,
+            height: 64,
+            objectFit: "cover",
+            boxShadow: "3px 3px 0 #0a0a0a",
+            zIndex: 2,
+          }}
+        />
+        {/* Vinyl peeking */}
+        <motion.div
+          animate={{ x: hovered ? 10 : 0, opacity: hovered ? 1 : 0.6 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            position: "absolute",
+            left: 26,
+            top: "50%",
+            transform: "translateY(-50%)",
+            zIndex: 1,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setPlaying((p) => !p);
+          }}
+        >
+          <VinylDisc
+            color={album.labelColor}
+            label={album.vinylLabel}
+            spinning={playing}
+            size={64}
+          />
+        </motion.div>
+      </div>
+
+      {/* Text block */}
+      <div style={{ zIndex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 10,
+            marginBottom: 3,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: "1.15rem",
+              fontStyle: "italic",
+              fontWeight: 700,
+              color: hovered ? album.accentColor : "#0a0a0a",
+              transition: "color 0.2s",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {album.title}
+          </span>
+          <span
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "0.8rem",
+              color: "#777",
+              fontWeight: 300,
+              flexShrink: 0,
+            }}
+          >
+            {album.artist}
+          </span>
+        </div>
+        <p
+          style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: "0.72rem",
+            color: "#999",
+            lineHeight: 1.45,
+            margin: 0,
+            display: "-webkit-box",
+            WebkitLineClamp: 1,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          {album.blurb}
+        </p>
+      </div>
+
+      {/* Rating */}
+      <div style={{ zIndex: 1, textAlign: "right", flexShrink: 0 }}>
+        <div
+          style={{
+            display: "inline-block",
+            fontFamily: "'Playfair Display', serif",
+            fontStyle: "italic",
+            fontSize: "0.8rem",
+            fontWeight: 700,
+            color: album.accentColor,
+            borderBottom: `2px solid ${album.accentColor}`,
+            paddingBottom: 1,
+            marginBottom: 4,
+          }}
+        >
+          {ratingWord}
+        </div>
+        <div
+          style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: "0.55rem",
+            color: "#bbb",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+          }}
+        >
+          {album.year} · {album.genre}
+        </div>
+      </div>
+
+      {/* Tag pill + reviewer */}
+      <div
+        style={{ zIndex: 1, textAlign: "right", flexShrink: 0, minWidth: 90 }}
+      >
+        <div
+          style={{
+            display: "inline-block",
+            fontFamily: "'DM Mono', monospace",
+            fontSize: "0.52rem",
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: "#fff",
+            background: album.accentColor,
+            padding: "3px 8px",
+            marginBottom: 5,
+          }}
+        >
+          {album.tag}
+        </div>
+        <div
+          style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: "0.62rem",
+            color: "#aaa",
+          }}
+        >
+          {album.reviewer}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function ReviewModal({
+  album,
+  onClose,
+}: {
+  album: (typeof albums)[0];
+  onClose: () => void;
+}) {
+  const [spinning, setSpinning] = useState(false);
+  const ratingWord = RATING_LABELS[album.rating];
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener("wheel", onWheel, { passive: false });
-    return () => window.removeEventListener("wheel", onWheel);
-  }, [navigate]);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
 
-  // Audio
-  useEffect(() => {
-    if (!audioRef.current) return;
-    if (spinning) audioRef.current.play().catch(() => {});
-    else audioRef.current.pause();
-  }, [spinning]);
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(10,10,10,0.7)",
+        backdropFilter: "blur(6px)",
+        zIndex: 100,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 48, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 32, scale: 0.97 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff",
+          maxWidth: 780,
+          width: "100%",
+          maxHeight: "88vh",
+          overflowY: "auto",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          position: "relative",
+        }}
+      >
+        {/* Left: artwork */}
+        <div
+          style={{
+            background: "#f4f4f4",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 48,
+            gap: 28,
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          {/* Accent circle behind */}
+          <div
+            style={{
+              position: "absolute",
+              width: 320,
+              height: 320,
+              borderRadius: "50%",
+              background: album.accentColor,
+              opacity: 0.06,
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%,-50%)",
+            }}
+          />
 
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume;
-  }, [volume]);
+          {/* Cover + vinyl */}
+          <div style={{ position: "relative", width: 200, height: 200 }}>
+            <div
+              style={{
+                position: "absolute",
+                left: 80,
+                top: 0,
+                zIndex: 1,
+                cursor: "pointer",
+              }}
+              onClick={() => setSpinning((s) => !s)}
+            >
+              <VinylDisc
+                color={album.labelColor}
+                label={album.vinylLabel}
+                spinning={spinning}
+                size={200}
+              />
+            </div>
+            <motion.img
+              src={album.cover}
+              alt={album.title}
+              initial={{ x: 0 }}
+              animate={{ x: spinning ? -20 : 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: 170,
+                height: 170,
+                objectFit: "cover",
+                boxShadow: "6px 6px 0 #0a0a0a",
+                zIndex: 2,
+              }}
+            />
+          </div>
 
-  const handleTimeUpdate = () => {
-    const a = audioRef.current;
-    if (!a || seeking) return;
-    setCurrentTime(a.currentTime);
-    setProgress(a.duration ? a.currentTime / a.duration : 0);
-  };
+          <button
+            onClick={() => setSpinning((s) => !s)}
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "0.62rem",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              background: spinning ? album.accentColor : "transparent",
+              color: spinning ? "#fff" : album.accentColor,
+              border: `1.5px solid ${album.accentColor}`,
+              padding: "8px 20px",
+              cursor: "pointer",
+              zIndex: 3,
+              transition: "all 0.2s",
+            }}
+          >
+            {spinning ? "⏸ stop spinning" : "▶ spin the record"}
+          </button>
+        </div>
 
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) setDuration(audioRef.current.duration);
-  };
+        {/* Right: info */}
+        <div
+          style={{
+            padding: "40px 36px",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Close */}
+          <button
+            onClick={onClose}
+            style={{
+              alignSelf: "flex-end",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "0.62rem",
+              letterSpacing: "0.18em",
+              color: "#bbb",
+              textTransform: "uppercase",
+              marginBottom: 16,
+            }}
+          >
+            ✕ close
+          </button>
 
-  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    setProgress(val);
-    setCurrentTime(val * (audioRef.current?.duration ?? 0));
-  };
+          <span
+            style={{
+              display: "inline-block",
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "0.58rem",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "#fff",
+              background: album.accentColor,
+              padding: "3px 9px",
+              alignSelf: "flex-start",
+              marginBottom: 14,
+            }}
+          >
+            {album.tag}
+          </span>
 
-  const handleSeekStart = () => setSeeking(true);
+          <h2
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              fontStyle: "italic",
+              fontSize: "2rem",
+              fontWeight: 700,
+              color: album.accentColor,
+              lineHeight: 1.1,
+              marginBottom: 6,
+            }}
+          >
+            {album.title}
+          </h2>
 
-  const handleSeekCommit = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    if (audioRef.current && audioRef.current.duration) {
-      audioRef.current.currentTime = val * audioRef.current.duration;
-    }
-    setSeeking(false);
-  };
+          <p
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "0.7rem",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "#555",
+              marginBottom: 4,
+            }}
+          >
+            {album.artist}
+          </p>
+          <p
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "0.7rem",
+              color: "#aaa",
+              marginBottom: 20,
+            }}
+          >
+            {album.year} · {album.genre}
+          </p>
 
-  const toggleSpin = () => setSpinning((s) => !s);
+          <div
+            style={{
+              height: 1,
+              background: "#e8e8e8",
+              marginBottom: 16,
+            }}
+          />
+
+          <div style={{ marginBottom: 20 }}>
+            <span
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontStyle: "italic",
+                fontSize: "1.4rem",
+                fontWeight: 700,
+                color: album.accentColor,
+                borderBottom: `2px solid ${album.accentColor}`,
+                paddingBottom: 2,
+              }}
+            >
+              {ratingWord}
+            </span>
+            <div
+              style={{
+                display: "flex",
+                gap: 5,
+                marginTop: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              {Object.values(RATING_LABELS).map((lbl, i) => (
+                <span
+                  key={lbl}
+                  style={{
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: "0.52rem",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    padding: "3px 7px",
+                    border: `1px solid ${i < album.rating ? album.accentColor : "#e8e8e8"}`,
+                    background:
+                      i < album.rating ? album.accentColor : "transparent",
+                    color: i < album.rating ? "#fff" : "#ccc",
+                  }}
+                >
+                  {lbl}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div
+            style={{
+              height: 1,
+              background: "#e8e8e8",
+              marginBottom: 16,
+            }}
+          />
+
+          <p
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "0.85rem",
+              lineHeight: 1.75,
+              color: "#333",
+              fontWeight: 300,
+              flex: 1,
+            }}
+          >
+            {album.blurb}
+          </p>
+
+          <p
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "0.72rem",
+              color: "#aaa",
+              marginTop: 20,
+            }}
+          >
+            Reviewed by{" "}
+            <strong style={{ color: "#555", fontWeight: 500 }}>
+              {album.reviewer}
+            </strong>
+          </p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+export default function HomePage() {
+  const [openId, setOpenId] = useState<number | null>(null);
+  const openAlbum =
+    openId !== null ? albums.find((a) => a.id === openId) : null;
+
+  const headerRef = useRef(null);
 
   return (
     <>
-      <audio
-        ref={audioRef}
-        src={album.song}
-        loop
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-      />
-
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap');
-
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-          background: #fff;
-          font-family: 'DM Sans', sans-serif;
-          overflow: hidden;
-          height: 100vh;
-        }
-
-        .page {
-          height: 100vh;
-          width: 100vw;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-        }
-
-        /* NAVBAR */
-        .navbar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 18px 48px;
-          border-bottom: 1.5px solid #0a0a0a;
-          flex-shrink: 0;
-          background: #fff;
-          z-index: 10;
-        }
-        .navbar h1 {
-          font-family: 'Playfair Display', serif;
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: #0a0a0a;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-        }
-        .navbar-tag {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.65rem;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          transition: color 0.5s;
-        }
-
-        /* MAIN */
-        .main {
-          display: flex;
-          flex: 1;
-          overflow: hidden;
-          min-height: 0;
-        }
-
-        /* LEFT */
-        .left-col {
-          width: 55%;
-          position: relative;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-right: 1.5px solid #0a0a0a;
-        }
-
-        /* scroll hints */
-        .scroll-hint {
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
-          z-index: 20;
-          pointer-events: none;
-          opacity: 0.28;
-        }
-        .scroll-hint.top { top: 18px; }
-        .scroll-hint.bottom { bottom: 18px; }
-        .scroll-hint span {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.5rem;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          color: #0a0a0a;
-        }
-
-        /* dots */
-        .album-dots {
-          position: absolute;
-          right: 18px;
-          top: 50%;
-          transform: translateY(-50%);
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          z-index: 20;
-        }
-        .adot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #e8e8e8;
-          border: 1px solid #ccc;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-        .adot.active {
-          background: #0a0a0a;
-          border-color: #0a0a0a;
-          transform: scale(1.4);
-        }
-
-        /* counter */
-        .album-counter {
-          position: absolute;
-          left: 24px;
-          bottom: 22px;
-          font-family: 'DM Mono', monospace;
-          font-size: 0.6rem;
-          letter-spacing: 0.15em;
-          color: #888;
-          text-transform: uppercase;
-          z-index: 10;
-        }
-
-        /* nav arrows */
-        .nav-arrows {
-          position: absolute;
-          right: 22px;
-          bottom: 22px;
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-          z-index: 10;
-        }
-        .nav-arrow {
-          width: 30px;
-          height: 30px;
-          border: 1.5px solid #0a0a0a;
-          background: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .nav-arrow:hover { background: #0a0a0a; color: #fff; }
-        .nav-arrow:disabled { opacity: 0.18; cursor: default; pointer-events: none; }
-        .nav-arrow svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
-
-        /* ARTWORK ANIMATIONS */
-        .artwork-slot {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .artwork-slot.entering {
-          animation: artEnter 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
-        .artwork-slot.exiting {
-          animation: artExit 0.55s cubic-bezier(0.55, 0, 1, 0.45) forwards;
-          pointer-events: none;
-        }
-
-        @keyframes artEnter {
-          from { opacity: 0; transform: translateY(var(--travel)) scale(0.96); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes artExit {
-          from { opacity: 1; transform: translateY(0) scale(1); }
-          to   { opacity: 0; transform: translateY(calc(var(--travel) * -1)) scale(0.96); }
-        }
-
-        /*
-          ARTWORK SCENE
-          --sz: size of cover square and vinyl circle
-          Layout: cover at left:0, vinyl centered at left = sz * 0.6
-          so vinyl right edge = sz*0.6 + sz/2 = sz*1.1
-          Total scene width = sz * 1.15 (give a little breathing room on right)
-          This whole block is then centered by the flex parent.
-        */
-        .artwork-scene {
-          --sz: min(310px, calc(100vh - 230px));
-          position: relative;
-          width: calc(var(--sz) * 1.15);
-          height: var(--sz);
-          flex-shrink: 0;
-        }
-
-        .album-cover {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: var(--sz);
-          height: var(--sz);
-          object-fit: cover;
-          z-index: 2;
-          box-shadow: 6px 6px 0px #0a0a0a;
-          display: block;
-        }
-
-        .vinyl-wrap {
-          position: absolute;
-          top: 0;
-          /* vinyl left edge starts at 55% of sz so ~45% peeks out */
-          left: calc(var(--sz) * 0.55);
-          width: var(--sz);
-          height: var(--sz);
-          z-index: 1;
-          cursor: pointer;
-        }
-
-        .vinyl {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          background: radial-gradient(circle at 50% 50%,
-            #2a2a2a 0%, #111 35%, #080808 65%, #030303 100%);
-          box-shadow: 4px 4px 30px rgba(0,0,0,0.45);
-          position: relative;
-          overflow: hidden;
-        }
-        .vinyl::before {
-          content: '';
-          position: absolute; inset: 0;
-          border-radius: 50%;
-          background: repeating-radial-gradient(
-            circle at 50%,
-            transparent 0px, transparent 4px,
-            rgba(255,255,255,0.03) 4px, rgba(255,255,255,0.03) 5px
-          );
-        }
-        .vinyl::after {
-          content: '';
-          position: absolute; inset: 0;
-          border-radius: 50%;
-          background: conic-gradient(
-            from 0deg,
-            rgba(255,255,255,0) 0deg, rgba(255,255,255,0.04) 15deg,
-            rgba(255,255,255,0) 30deg, rgba(255,255,255,0.02) 90deg,
-            rgba(255,255,255,0.06) 180deg, rgba(255,255,255,0.01) 270deg,
-            rgba(255,255,255,0) 360deg
-          );
-          pointer-events: none;
-        }
-
-        .vinyl-label {
-          position: absolute;
-          top: 50%; left: 50%;
-          transform: translate(-50%, -50%);
-          width: 26%;
-          aspect-ratio: 1;
-          border-radius: 50%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          pointer-events: none;
-        }
-        .vinyl-label span {
-          font-family: 'Playfair Display', serif;
-          font-size: 0.42rem;
-          color: white;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-        }
-        .vinyl-label .center-dot {
-          width: 5px; height: 5px;
-          background: #0a0a0a;
-          border-radius: 50%;
-          margin-top: 3px;
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-        .spinning { animation: spin 2.8s linear infinite; }
-
-        /* RIGHT */
-        .right-col {
-          width: 45%;
-          display: flex;
-          flex-direction: column;
-          overflow-y: auto;
-          padding: 36px 44px;
-        }
-        .review-card {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-        }
-        .content-wrap {
-          transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1);
-        }
-        .content-wrap.fading { opacity: 0; transform: translateY(10px); }
-
-        .category-tag {
-          display: inline-block;
-          font-family: 'DM Mono', monospace;
-          font-size: 0.62rem;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          color: #fff;
-          padding: 4px 10px;
-          margin-bottom: 18px;
-        }
-
-        .review-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 2.7rem;
-          line-height: 1.05;
-          font-weight: 700;
-          color: #0a0a0a;
-          margin-bottom: 6px;
-        }
-        .review-title em { font-style: italic; }
-
-        .review-artist {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.74rem;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          margin-bottom: 5px;
-        }
-        .review-meta {
-          font-size: 0.72rem;
-          color: #aaa;
-          letter-spacing: 0.06em;
-          margin-bottom: 6px;
-        }
-        .review-author {
-          font-size: 0.82rem;
-          font-weight: 300;
-          color: #888;
-          letter-spacing: 0.04em;
-          margin-bottom: 26px;
-        }
-        .review-author strong { font-weight: 500; color: #0a0a0a; }
-
-        .divider { width: 100%; height: 1px; background: #e8e8e8; margin-bottom: 22px; }
-
-        .rating-row { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
-        .stars { display: flex; gap: 3px; }
-        .star { width: 15px; height: 15px; }
-        .star.empty { fill: none; stroke: #e8e8e8; stroke-width: 1.5px; }
-        .rating-label { font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.1em; color: #888; }
-
-        .player-section {
-          margin-bottom: 26px;
-          padding: 16px;
-          border: 1px solid #e8e8e8;
-          background: #fafafa;
-        }
-        .player-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-        .play-btn {
-          width: 36px; height: 36px;
-          border-radius: 50%;
-          border: 1.5px solid #0a0a0a;
-          background: #fff;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; flex-shrink: 0;
-          transition: background 0.2s, border-color 0.2s;
-        }
-        .play-btn:hover { background: #0a0a0a; }
-        .play-btn:hover svg { fill: #fff; }
-        .play-btn svg { width: 14px; height: 14px; fill: #0a0a0a; transition: fill 0.2s; }
-
-        .track-info { flex: 1; min-width: 0; }
-        .track-name {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.68rem; color: #0a0a0a;
-          letter-spacing: 0.06em;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .track-sub { font-size: 0.62rem; color: #888; margin-top: 2px; letter-spacing: 0.04em; }
-
-        .progress-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-        .time-label {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.58rem; color: #888;
-          letter-spacing: 0.04em; flex-shrink: 0; width: 28px;
-        }
-        .time-label.right { text-align: right; }
-        .progress-wrap { flex: 1; position: relative; height: 18px; display: flex; align-items: center; cursor: pointer; }
-        .progress-fill-track {
-          position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-          height: 3px; background: #e8e8e8; width: 100%; border-radius: 2px; pointer-events: none;
-        }
-        .progress-fill-bar {
-          position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-          height: 3px; border-radius: 2px; pointer-events: none;
-          transition: width 0.1s linear;
-        }
-        .progress-slider {
-          position: relative; z-index: 1; width: 100%;
-          -webkit-appearance: none; appearance: none;
-          height: 3px; background: transparent; outline: none; cursor: pointer;
-        }
-        .progress-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          width: 13px; height: 13px; border-radius: 50%;
-          background: #0a0a0a; cursor: pointer;
-          border: 2px solid #fff; box-shadow: 0 0 0 1.5px #0a0a0a;
-          transition: transform 0.15s;
-        }
-        .progress-slider:hover::-webkit-slider-thumb { transform: scale(1.2); }
-
-        .volume-row { display: flex; align-items: center; gap: 8px; }
-        .vol-icon { width: 14px; height: 14px; flex-shrink: 0; color: #888; }
-        .volume-slider {
-          flex: 1; -webkit-appearance: none; appearance: none;
-          height: 2px; background: #e8e8e8; outline: none; cursor: pointer;
-        }
-        .volume-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          width: 10px; height: 10px; border-radius: 50%; background: #0a0a0a; cursor: pointer;
-        }
-
-        .btn-row { display: flex; align-items: center; gap: 16px; }
-        .read-more {
-          display: inline-flex; align-items: center; gap: 12px;
-          color: #fff;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 0.75rem; font-weight: 500;
-          letter-spacing: 0.18em; text-transform: uppercase;
-          padding: 14px 28px; border: none; cursor: pointer;
-          text-decoration: none; transition: filter 0.2s;
-        }
-        .read-more:hover { filter: brightness(0.82); }
-        .read-more::after { content: '→'; font-size: 0.95rem; transition: transform 0.2s; }
-        .read-more:hover::after { transform: translateX(4px); }
-
-        .spin-hint {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.62rem; letter-spacing: 0.12em;
-          color: #888; cursor: pointer; text-transform: uppercase;
-          transition: color 0.2s; background: none; border: none; padding: 0;
-        }
+        body { background: #fff; font-family: 'DM Sans', sans-serif; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #ddd; }
       `}</style>
 
-      <div className="page">
-        <nav className="navbar">
-          <h1>teeeheee</h1>
-          <span className="navbar-tag" style={{ color: album.accentColor }}>
-            Vol. 12 — 2025
-          </span>
-        </nav>
-
-        <div className="main">
-          {/* ── LEFT ── */}
-          <div className="left-col">
-            {activeIdx > 0 && (
-              <div className="scroll-hint top">
-                <svg width="18" height="10" viewBox="0 0 18 10" fill="none">
-                  <path
-                    d="M1 8L9 2L17 8"
-                    stroke="#0a0a0a"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span>prev</span>
-              </div>
-            )}
-            {activeIdx < albums.length - 1 && (
-              <div className="scroll-hint bottom">
-                <span>next</span>
-                <svg width="18" height="10" viewBox="0 0 18 10" fill="none">
-                  <path
-                    d="M1 2L9 8L17 2"
-                    stroke="#0a0a0a"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-            )}
-
-            <div className="album-dots">
-              {albums.map((a, i) => (
-                <div
-                  key={a.id}
-                  className={`adot ${i === activeIdx ? "active" : ""}`}
-                  onClick={() => {
-                    if (!transitioning && i !== activeIdx)
-                      navigate(i > activeIdx ? "down" : "up");
-                  }}
-                  title={a.artist}
-                />
-              ))}
-            </div>
-
-            <div className="album-counter">
-              {String(activeIdx + 1).padStart(2, "0")} /{" "}
-              {String(albums.length).padStart(2, "0")}
-            </div>
-
-            <div className="nav-arrows">
-              <button
-                className="nav-arrow"
-                onClick={() => navigate("up")}
-                disabled={activeIdx === 0 || transitioning}
-              >
-                <svg viewBox="0 0 24 24">
-                  <path d="M18 15l-6-6-6 6" />
-                </svg>
-              </button>
-              <button
-                className="nav-arrow"
-                onClick={() => navigate("down")}
-                disabled={activeIdx === albums.length - 1 || transitioning}
-              >
-                <svg viewBox="0 0 24 24">
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Exiting */}
-            {transitioning &&
-              prevIdx !== null &&
-              (() => {
-                const ea = albums[prevIdx];
-                return (
-                  <div
-                    className="artwork-slot exiting"
-                    style={{
-                      ["--travel" as any]:
-                        direction === "down" ? "80px" : "-80px",
-                    }}
-                  >
-                    <div className="artwork-scene">
-                      <div className="vinyl-wrap">
-                        <div className="vinyl">
-                          <div
-                            className="vinyl-label"
-                            style={{ background: ea.labelColor }}
-                          >
-                            <span>{ea.vinylLabel}</span>
-                            <div className="center-dot" />
-                          </div>
-                        </div>
-                      </div>
-                      <img src={ea.cover} alt="" className="album-cover" />
-                    </div>
-                  </div>
-                );
-              })()}
-
-            {/* Entering / active */}
-            <div
-              key={activeIdx}
-              className="artwork-slot entering"
+      {/* NAVBAR */}
+      <nav
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "18px 48px",
+          borderBottom: "1.5px solid #0a0a0a",
+          background: "#fff",
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+        }}
+      >
+        <h1
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: "1.1rem",
+            fontWeight: 700,
+            color: "#0a0a0a",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+          }}
+        >
+          teeeheee
+        </h1>
+        <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
+          {["Reviews", "Features", "Staff Picks", "Archive"].map((item) => (
+            <span
+              key={item}
               style={{
-                ["--travel" as any]: direction === "down" ? "80px" : "-80px",
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "0.6rem",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "#888",
+                cursor: "pointer",
               }}
             >
-              <div className="artwork-scene">
-                <div className="vinyl-wrap" onClick={toggleSpin}>
-                  <div className={`vinyl ${spinning ? "spinning" : ""}`}>
-                    <div
-                      className="vinyl-label"
-                      style={{ background: album.labelColor }}
-                    >
-                      <span>{album.vinylLabel}</span>
-                      <div className="center-dot" />
-                    </div>
-                  </div>
-                </div>
-                <img
-                  src={album.cover}
-                  alt="Album cover"
-                  className="album-cover"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ── RIGHT ── */}
-          <div className="right-col">
-            <div className="review-card">
-              <div className={`content-wrap ${transitioning ? "fading" : ""}`}>
-                {/* half-star gradient */}
-                <svg width="0" height="0" style={{ position: "absolute" }}>
-                  <defs>
-                    <linearGradient
-                      id="half-grad"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="0%"
-                    >
-                      <stop offset="50%" stopColor={album.accentColor} />
-                      <stop offset="50%" stopColor="transparent" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-
-                <span
-                  className="category-tag"
-                  style={{ background: album.accentColor }}
-                >
-                  {album.tag}
-                </span>
-
-                <h2 className="review-title">
-                  <em style={{ color: album.accentColor }}>{album.title}</em>
-                  {album.subtitle && (
-                    <>
-                      <br />
-                      {album.subtitle}
-                    </>
-                  )}
-                </h2>
-
-                <p
-                  className="review-artist"
-                  style={{ color: album.accentColor }}
-                >
-                  {album.artist}
-                </p>
-
-                <p className="review-meta">
-                  {album.year} · {album.genre}
-                </p>
-
-                <p className="review-author">
-                  Reviewed by <strong>Bryan Chung @ MIT '29</strong>
-                  <br />
-                  Minor UI Contribution by{" "}
-                  <strong>Jennifer Park @ Tufts '29</strong>
-                </p>
-
-                <div className="divider" />
-
-                <div className="rating-row">
-                  <div className="stars">
-                    {Array.from({ length: 5 }).map((_, i) => {
-                      const isHalf =
-                        album.ratingHalf && i === Math.floor(album.rating);
-                      const isEmpty = album.ratingHalf
-                        ? i > Math.floor(album.rating)
-                        : i >= album.rating;
-                      if (isHalf)
-                        return (
-                          <svg
-                            key={i}
-                            className="star"
-                            viewBox="0 0 24 24"
-                            style={{ fill: "url(#half-grad)" }}
-                          >
-                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                          </svg>
-                        );
-                      if (isEmpty)
-                        return (
-                          <svg
-                            key={i}
-                            className="star empty"
-                            viewBox="0 0 24 24"
-                          >
-                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                          </svg>
-                        );
-                      return (
-                        <svg
-                          key={i}
-                          className="star"
-                          viewBox="0 0 24 24"
-                          style={{ fill: album.accentColor }}
-                        >
-                          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                        </svg>
-                      );
-                    })}
-                  </div>
-                  <span className="rating-label">
-                    {album.ratingHalf ? `${album.rating}.5` : `${album.rating}`}{" "}
-                    / 5
-                  </span>
-                </div>
-
-                {/* Player */}
-                <div className="player-section">
-                  <div className="player-top">
-                    <button
-                      className="play-btn"
-                      onClick={toggleSpin}
-                      title={spinning ? "Pause" : "Play"}
-                      style={
-                        spinning
-                          ? {
-                              background: album.accentColor,
-                              borderColor: album.accentColor,
-                            }
-                          : {}
-                      }
-                    >
-                      {spinning ? (
-                        <svg viewBox="0 0 24 24" fill="white">
-                          <rect x="5" y="4" width="4" height="16" />
-                          <rect x="15" y="4" width="4" height="16" />
-                        </svg>
-                      ) : (
-                        <svg viewBox="0 0 24 24">
-                          <polygon points="5,3 19,12 5,21" />
-                        </svg>
-                      )}
-                    </button>
-
-                    <div className="track-info">
-                      <div className="track-name">
-                        Play Bryan's Recommended Song
-                      </div>
-                      <div className="track-sub">
-                        {spinning
-                          ? "Now playing · spins with record"
-                          : "Click play or spin the record"}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="progress-row">
-                    <span className="time-label">
-                      {formatTime(currentTime)}
-                    </span>
-                    <div className="progress-wrap">
-                      <div className="progress-fill-track" />
-                      <div
-                        className="progress-fill-bar"
-                        style={{
-                          width: `${progress * 100}%`,
-                          background: album.accentColor,
-                        }}
-                      />
-                      <input
-                        type="range"
-                        className="progress-slider"
-                        min={0}
-                        max={1}
-                        step={0.001}
-                        value={progress}
-                        onMouseDown={handleSeekStart}
-                        onTouchStart={handleSeekStart}
-                        onChange={handleSeekChange}
-                        onMouseUp={handleSeekCommit as any}
-                        onTouchEnd={handleSeekCommit as any}
-                      />
-                    </div>
-                    <span className="time-label right">
-                      {formatTime(duration)}
-                    </span>
-                  </div>
-
-                  <div className="volume-row">
-                    <svg
-                      className="vol-icon"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polygon points="11,5 6,9 2,9 2,15 6,15 11,19" />
-                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                    </svg>
-                    <input
-                      type="range"
-                      className="volume-slider"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={volume}
-                      onChange={(e) => setVolume(parseFloat(e.target.value))}
-                    />
-                  </div>
-                </div>
-
-                <div className="btn-row">
-                  <a
-                    href={album.href}
-                    className="read-more"
-                    style={{ background: album.accentColor }}
-                  >
-                    Read Full Review
-                  </a>
-                  <button className="spin-hint" onClick={toggleSpin}>
-                    {spinning ? "⏸ Stop" : "▶ Spin"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+              {item}
+            </span>
+          ))}
         </div>
+        <span
+          style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: "0.65rem",
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            color: "#bbb",
+          }}
+        >
+          Vol. 12 — 2025
+        </span>
+      </nav>
+
+      {/* HERO HEADER */}
+      <motion.div
+        ref={headerRef}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        style={{
+          padding: "56px 48px 40px",
+          borderBottom: "1.5px solid #0a0a0a",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Large decorative background text */}
+        <div
+          style={{
+            position: "absolute",
+            top: -10,
+            right: 48,
+            fontFamily: "'Playfair Display', serif",
+            fontSize: "clamp(80px, 14vw, 180px)",
+            fontWeight: 700,
+            fontStyle: "italic",
+            color: "transparent",
+            WebkitTextStroke: "1px #f0f0f0",
+            lineHeight: 1,
+            userSelect: "none",
+            pointerEvents: "none",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Reviews
+        </div>
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "0.62rem",
+              letterSpacing: "0.25em",
+              textTransform: "uppercase",
+              color: "#bbb",
+              marginBottom: 14,
+            }}
+          >
+            Bryan Musoc Review — Home
+          </motion.p>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              delay: 0.18,
+              duration: 0.6,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: "clamp(2rem, 4vw, 3.4rem)",
+              fontWeight: 700,
+              lineHeight: 1.05,
+              color: "#0a0a0a",
+              maxWidth: 640,
+            }}
+          >
+            What we've been
+            <br />
+            <em style={{ color: "#555" }}>listening to.</em>
+          </motion.h2>
+
+          {/* Decorative rule with stats */}
+          <motion.div
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            transition={{
+              delay: 0.35,
+              duration: 0.6,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            style={{
+              display: "flex",
+              gap: 32,
+              marginTop: 28,
+              paddingTop: 20,
+              borderTop: "1px solid #e8e8e8",
+              transformOrigin: "left",
+            }}
+          >
+            {[
+              { label: "Reviews this month", value: "06" },
+              { label: "Staff picks", value: "02" },
+              { label: "Average rating", value: "buy it" },
+            ].map((stat) => (
+              <div key={stat.label}>
+                <div
+                  style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontStyle: "italic",
+                    fontSize: "1.4rem",
+                    fontWeight: 700,
+                    color: "#0a0a0a",
+                    lineHeight: 1,
+                    marginBottom: 4,
+                  }}
+                >
+                  {stat.value}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: "0.55rem",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    color: "#bbb",
+                  }}
+                >
+                  {stat.label}
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* COLUMN HEADERS */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "52px 96px 1fr auto auto",
+          gap: "0 24px",
+          padding: "10px 48px",
+          borderBottom: "1px solid #e8e8e8",
+          background: "#fafafa",
+        }}
+      >
+        {["#", "", "Title / Artist", "Rating", "Tag"].map((h, i) => (
+          <span
+            key={i}
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "0.52rem",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "#ccc",
+              textAlign: i === 3 ? "right" : i === 4 ? "right" : undefined,
+            }}
+          >
+            {h}
+          </span>
+        ))}
       </div>
+
+      {/* REVIEW ROWS */}
+      <div style={{ padding: "0 48px 80px" }}>
+        {albums.map((album, index) => (
+          <ReviewRow
+            key={album.id}
+            album={album}
+            index={index}
+            onOpen={setOpenId}
+          />
+        ))}
+      </div>
+
+      {/* FOOTER */}
+      <footer
+        style={{
+          borderTop: "1.5px solid #0a0a0a",
+          padding: "24px 48px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: "0.9rem",
+            fontWeight: 700,
+            fontStyle: "italic",
+            color: "#0a0a0a",
+            letterSpacing: "0.08em",
+          }}
+        >
+          teeeheee
+        </span>
+        <span
+          style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: "0.55rem",
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            color: "#ccc",
+          }}
+        >
+          Bryan Chung @ MIT '29 · Jennifer Park @ Tufts '29
+        </span>
+      </footer>
+
+      {/* MODAL */}
+      <AnimatePresence>
+        {openAlbum && (
+          <ReviewModal album={openAlbum} onClose={() => setOpenId(null)} />
+        )}
+      </AnimatePresence>
     </>
   );
 }
