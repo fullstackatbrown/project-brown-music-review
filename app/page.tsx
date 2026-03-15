@@ -1,4 +1,6 @@
 "use client";
+import EmailSignup from "./components/EmailSignup";
+/* Lines 2-5 omitted */
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import SplashCursor from "../components/SplashCursor";
@@ -968,6 +970,9 @@ export default function HomePage() {
           />
         ))}
       </div>
+
+        {/* EMAIL SIGNUP */}
+        <EmailSignup />
 
       {/* FOOTER */}
       <footer
