@@ -153,7 +153,13 @@ function VinylDisc({
         overflow: "hidden",
       }}
     >
-      <SplashCursor />
+      <SplashCursor
+        SPLAT_FORCE={1500}
+        SPLAT_RADIUS={0.08}
+        DENSITY_DISSIPATION={6}
+        VELOCITY_DISSIPATION={4}
+        CURL={1}
+      />
 
       {/* Groove rings */}
       {[0.72, 0.58, 0.46].map((r) => (
@@ -795,62 +801,6 @@ export default function HomePage() {
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #ddd; }
       `}</style>
-
-      {/* NAVBAR */}
-      <nav
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "18px 48px",
-          borderBottom: "1.5px solid #0a0a0a",
-          background: "#fff",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-        }}
-      >
-        <h1
-          style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: "1.1rem",
-            fontWeight: 700,
-            color: "#0a0a0a",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-          }}
-        >
-          teeeheee
-        </h1>
-        <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
-          {["Reviews", "Features", "Staff Picks", "Archive"].map((item) => (
-            <span
-              key={item}
-              style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: "0.6rem",
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: "#888",
-                cursor: "pointer",
-              }}
-            >
-              {item}
-            </span>
-          ))}
-        </div>
-        <span
-          style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: "0.65rem",
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            color: "#bbb",
-          }}
-        >
-          Vol. 12 — 2025
-        </span>
-      </nav>
 
       {/* HERO HEADER */}
       <motion.div
