@@ -1,8 +1,15 @@
+import { getArticleBySlug } from "@/lib/cosmic";
 import Image from "next/image";
-import albumArt from "../../assets/image 5.png";
-import albumArt_2 from "../../assets/Screenshot_2026-02-22_at_11.25.36_AM-removebg-preview 1.png";
 
-export default function ReviewPage() {
+export default async function ReviewPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const response = await getArticleBySlug(slug);
+  const article = response.object;
+
+  if (!article) return <div>Not found</div>;
+
+  const meta = article.metadata as any;
+
   return (
     <div>
       {/* white bg box up top */}
@@ -10,37 +17,31 @@ export default function ReviewPage() {
         <div className="flex items-start gap-8 max-w-5xl mx-auto">
 
           {/* image */}
-          <div className="relative w-[55%] shrink-0">
-            <Image
-              src={albumArt}
-              alt="album-cover"
-              className="w-full h-auto"
-            />
-            <div className="absolute -top-6 right-[-6%] w-[38%]">
+          {meta.cover_image?.imgix_url && (
+            <div className="relative w-[55%] shrink-0">
               <Image
-                src={albumArt_2}
-                alt=""
+                src={meta.cover_image.imgix_url}
+                alt={article.title}
                 className="w-full h-auto"
+                width={600}
+                height={600}
               />
             </div>
-          </div>
+          )}
 
           {/* review content */}
           <div className="flex flex-col justify-center pt-8">
             <span className="text-xs font-mono tracking-widest uppercase text-red-600 mb-2">
-              Album Review
+              {article.type}
             </span>
             <h1 className="text-4xl font-bold font-serif mb-2">
-              Album Name
+              {article.title}
             </h1>
             <p className="text-sm text-gray-500 mb-6">
-              Reviewed by <strong className="text-black">Author Name</strong>
+              Reviewed by <strong className="text-black">{meta.writer}</strong>
             </p>
             <div className="w-full h-px bg-gray-200 mb-6" />
-            <p className="text-base leading-relaxed text-gray-800">
-              This is where the review body text will go. It will eventually
-              be pulled from the CMS and rendered here dynamically.
-            </p>
+            <div className="text-base leading-relaxed text-gray-800" dangerouslySetInnerHTML={{ __html: meta.body_content || "" }} />
           </div>
         </div>
       </section>
