@@ -7,7 +7,7 @@ import type {
   Article,
   CosmicListResponse as TypedCosmicListResponse,
   CosmicResponse as TypedCosmicResponse,
-} from "@/lib/types"
+} from "../lib/types"
 
 export type CosmicStatus = "published" | "draft" | "any"
 
