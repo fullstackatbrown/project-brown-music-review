@@ -1,273 +1,338 @@
-import {
-  createBucketClient,
-  type BucketConfig,
-  type GenericObject,
-} from "@cosmicjs/sdk"
+import { createBucketClient } from "@cosmicjs/sdk"
+import { unstable_cache } from "next/cache"
 import type {
-  Article,
-  CosmicListResponse as TypedCosmicListResponse,
-  CosmicResponse as TypedCosmicResponse,
-} from "../lib/types"
+  AlbumRate,
+  AlbumReview,
+  HomepageArticle,
+  Image as CosmicImage,
+} from "./types"
 
-export type CosmicStatus = "published" | "draft" | "any"
+// These should match your Cosmic object type slugs used in API queries.
+// Keep env-configurable to avoid casing/slug mismatch.
+const ALBUM_RATE_TYPE = process.env.COSMIC_TYPE_ALBUM_RATE ?? "albumrate"
+const ALBUM_REVIEW_TYPE = process.env.COSMIC_TYPE_ALBUM_REVIEW ?? "albumreview"
 
-export type CosmicMetadata = Record<string, unknown>
+export type CosmicArticle = AlbumRate | AlbumReview
 
-export const articleProps = `{
-  id
-  slug
-  title
-  type
-  metadata {
-    writer
-    review_contributors
-    editor_s
-    managing_editor
-    publish_date
-    tagline
-    cover_image {
-      url
-      imgix_url
-    }
-    body_content
-    in_paragraph_video {
-      url
-      imgix_url
-    }
-  }
-}`
-
-export const articleMediaProps = "alt_text,width,height"
-
-export type CosmicObject<TMetadata extends CosmicMetadata = CosmicMetadata> = {
-  id: string
-  type: string
-  title: string
-  slug: string
-  status: Exclude<CosmicStatus, "any">
-  metadata: TMetadata
-  created_at?: string
-  modified_at?: string
-  published_at?: string | null
-  publish_at?: string | null
-  unpublish_at?: string | null
-  thumbnail?: string | null
-  locale?: string | null
-  [key: string]: unknown
+type ArticleMetadata = {
+  body?: string | null
+  body_content?: string | null
+  citation?: string | null
+  publish_date?: string | null
+  score?: {
+    key?: string | null
+    value?: string | null
+  } | null
+  tagline?: string | null
+  writer?: string | null
+  cover_image?: CosmicImage | null
 }
 
-export type CosmicMetadataListResponse<
-  TMetadata extends CosmicMetadata = CosmicMetadata,
-> = {
-  objects: CosmicObject<TMetadata>[]
-  total?: number
-  limit?: number
+type AccentStyle = {
+  accentColor: string
+  labelColor: string
+  vinylLabel: string
 }
 
-export type CosmicMetadataSingleResponse<
-  TMetadata extends CosmicMetadata = CosmicMetadata,
-> = {
-  object: CosmicObject<TMetadata> | null
+const ARTICLE_LIST_LIMIT = 12
+
+const SCORE_STYLES: Record<string, AccentStyle> = {
+  trash: {
+    accentColor: "#6b7280",
+    labelColor: "#6b7280",
+    vinylLabel: "TRS",
+  },
+  skip: {
+    accentColor: "#8b1a00",
+    labelColor: "#8b1a00",
+    vinylLabel: "SKP",
+  },
+  rent: {
+    accentColor: "#1d3f8a",
+    labelColor: "#1d3f8a",
+    vinylLabel: "RNT",
+  },
+  buy: {
+    accentColor: "#1a6b3c",
+    labelColor: "#1a6b3c",
+    vinylLabel: "BUY",
+  },
+  crown: {
+    accentColor: "#b8860b",
+    labelColor: "#b8860b",
+    vinylLabel: "CRN",
+  },
 }
 
-type CosmicProps = string | string[]
-
-type CosmicQuery = GenericObject
-
-type QueryOptions = {
-  props?: CosmicProps
-  status?: CosmicStatus
-  depth?: number
-  mediaProps?: string
-}
-
-export type GetObjectsParams = QueryOptions & {
-  query?: CosmicQuery
-  limit?: number
-  skip?: number
-  after?: string
-  sort?: string
-}
-
-export type GetObjectParams = QueryOptions & {
-  query: CosmicQuery
+const REVIEW_STYLE: AccentStyle = {
+  accentColor: "#5c2d91",
+  labelColor: "#5c2d91",
+  vinylLabel: "BMR",
 }
 
 let cosmicClient: ReturnType<typeof createBucketClient> | null = null
 
-function getRequiredEnv(name: keyof NodeJS.ProcessEnv): string {
-  const value = process.env[name]
-
-  if (!value) {
-    throw new Error(
-      `Missing ${name}. Set it in your environment before using Cosmic.`,
-    )
-  }
-
-  return value
-}
-
-export function isCosmicConfigured(): boolean {
-  return Boolean(process.env.COSMIC_BUCKET_SLUG && process.env.COSMIC_READ_KEY)
-}
-
-export function getCosmicConfig(): BucketConfig {
-  const apiEnvironment =
-    process.env.COSMIC_API_ENVIRONMENT === "staging"
-      ? "staging"
-      : "production"
-
-  return {
-    bucketSlug: getRequiredEnv("COSMIC_BUCKET_SLUG"),
-    readKey: getRequiredEnv("COSMIC_READ_KEY"),
-    writeKey: process.env.COSMIC_WRITE_KEY,
-    apiVersion: "v3",
-    apiEnvironment,
-  }
-}
-
-export function getCosmicClient() {
+function getCosmicClient() {
   if (!cosmicClient) {
-    cosmicClient = createBucketClient(getCosmicConfig())
+    const bucketSlug = process.env.COSMIC_BUCKET_SLUG
+    const readKey = process.env.COSMIC_READ_KEY
+
+    if (!bucketSlug || !readKey) {
+      throw new Error("Missing COSMIC_BUCKET_SLUG or COSMIC_READ_KEY")
+    }
+
+    cosmicClient = createBucketClient({
+      bucketSlug,
+      readKey,
+    })
   }
 
   return cosmicClient
 }
 
-function applySharedOptions<
-  T extends {
-    props(props: CosmicProps): T
-    status(status: CosmicStatus): T
-    depth(depth: number): T
-    options(options: { media: { props: string } }): T
-  },
->(request: T, options: QueryOptions): T {
-  let nextRequest = request
-
-  if (options.props) {
-    nextRequest = nextRequest.props(options.props)
-  }
-
-  if (options.status) {
-    nextRequest = nextRequest.status(options.status)
-  }
-
-  if (typeof options.depth === "number") {
-    nextRequest = nextRequest.depth(options.depth)
-  }
-
-  if (options.mediaProps) {
-    nextRequest = nextRequest.options({
-      media: {
-        props: options.mediaProps,
-      },
-    })
-  }
-
-  return nextRequest
+function getArticleMetadata(article: CosmicArticle): ArticleMetadata {
+  return article.metadata as ArticleMetadata
 }
 
-export async function getObjects<
-  TMetadata extends CosmicMetadata = CosmicMetadata,
->({
-  query = {},
-  props,
-  status,
-  depth,
-  mediaProps,
-  limit,
-  skip,
-  after,
-  sort,
-}: GetObjectsParams = {}): Promise<CosmicMetadataListResponse<TMetadata>> {
-  let request = applySharedOptions(getCosmicClient().objects.find(query), {
-    props,
-    status,
-    depth,
-    mediaProps,
-  })
+async function findOneByTypeAndSlug<T>(type: string, slug: string): Promise<T | null> {
+  try {
+    const { object } = await getCosmicClient().objects
+      .findOne({
+        type,
+        slug,
+      })
+      .depth(1)
 
-  if (typeof limit === "number") {
-    request = request.limit(limit)
+    return (object as T) ?? null
+  } catch {
+    return null
   }
-
-  if (typeof skip === "number") {
-    request = request.skip(skip)
-  }
-
-  if (after) {
-    request = request.after(after)
-  }
-
-  if (sort) {
-    request = request.sort(sort)
-  }
-
-  return (await request) as CosmicMetadataListResponse<TMetadata>
 }
 
-export async function getObject<
-  TMetadata extends CosmicMetadata = CosmicMetadata,
->({
-  query,
-  props,
-  status,
-  depth,
-  mediaProps,
-}: GetObjectParams): Promise<CosmicMetadataSingleResponse<TMetadata>> {
-  const request = applySharedOptions(getCosmicClient().objects.findOne(query), {
-    props,
-    status,
-    depth,
-    mediaProps,
-  })
-
-  return (await request) as CosmicMetadataSingleResponse<TMetadata>
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;")
 }
 
-export async function getArticles(
-  params: Omit<GetObjectsParams, "query"> = {},
-): Promise<TypedCosmicListResponse<Article>> {
-  return (await getObjects({
-    query: { type: "article" },
-    props: articleProps,
-    mediaProps: articleMediaProps,
-    ...params,
-  })) as unknown as TypedCosmicListResponse<Article>
+function looksLikeHtml(value: string): boolean {
+  return /<\/?[a-z][\s\S]*>/i.test(value)
 }
 
-export async function getArticleBySlug(
-  slug: string,
-  options: Omit<GetObjectParams, "query"> = {},
-): Promise<TypedCosmicResponse<Article>> {
-  return (await getObjectBySlug("article", slug, {
-    props: articleProps,
-    mediaProps: articleMediaProps,
-    ...options,
-  })) as unknown as TypedCosmicResponse<Article>
+function convertPlainTextToHtml(value: string): string {
+  return value
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replaceAll("\n", "<br />")}</p>`)
+    .join("")
 }
 
-export async function getObjectBySlug<
-  TMetadata extends CosmicMetadata = CosmicMetadata,
->(
+export async function getAlbumRateBySlug(slug: string): Promise<AlbumRate | null> {
+  return findOneByTypeAndSlug<AlbumRate>(ALBUM_RATE_TYPE, slug)
+}
+
+export async function getAlbumReviewBySlug(slug: string): Promise<AlbumReview | null> {
+  return findOneByTypeAndSlug<AlbumReview>(ALBUM_REVIEW_TYPE, slug)
+}
+
+async function findArticleBySlug(slug: string): Promise<CosmicArticle | null> {
+  try {
+    const { object } = await getCosmicClient().objects
+      .findOne({
+        slug,
+      })
+      .status("published")
+      .depth(1)
+
+    const article = (object as CosmicArticle | null) ?? null
+
+    if (!article) {
+      return null
+    }
+
+    if (article.type !== ALBUM_RATE_TYPE && article.type !== ALBUM_REVIEW_TYPE) {
+      return null
+    }
+
+    return article
+  } catch {
+    return null
+  }
+}
+
+export const getArticleBySlug = unstable_cache(
+  async (slug: string) => findArticleBySlug(slug),
+  ["cosmic-article-by-slug"],
+  { revalidate: 300 },
+)
+
+export function getArticleBodyFormat<T extends CosmicArticle>(
+  article: T,
+): T extends AlbumRate ? "markdown" : "html" {
+  return (article.type === "albumrate" ? "markdown" : "html") as T extends AlbumRate
+    ? "markdown"
+    : "html"
+}
+
+export function getArticleBodyContent(article: CosmicArticle): string {
+  const metadata = getArticleMetadata(article)
+  return metadata.body?.trim() || metadata.body_content?.trim() || ""
+}
+
+export function getArticleBodyHtml(article: CosmicArticle): string {
+  const body = getArticleBodyContent(article)
+  if (!body) return ""
+  if (getArticleBodyFormat(article) === "html" || looksLikeHtml(body)) return body
+  return convertPlainTextToHtml(body)
+}
+
+export function getArticleWriter(article: CosmicArticle): string | null {
+  const writer = getArticleMetadata(article).writer?.trim()
+  return writer || null
+}
+
+export function getArticleCoverImage(article: CosmicArticle): CosmicImage | null {
+  return getArticleMetadata(article).cover_image ?? null
+}
+
+export function getArticleTypeLabel(article: CosmicArticle): string {
+  if (article.type === "albumrate") {
+    return "Album Rate"
+  }
+
+  if (article.type === "albumreview") {
+    return "Album Review"
+  }
+
+  return "Article"
+}
+
+function stripHtml(value: string): string {
+  return value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+}
+
+function getArticleSummary(article: CosmicArticle): string {
+  const metadata = getArticleMetadata(article)
+
+  if (metadata.tagline?.trim()) {
+    return metadata.tagline.trim()
+  }
+
+  const body = getArticleBodyContent(article)
+  if (!body) {
+    return ""
+  }
+
+  const plainText = getArticleBodyFormat(article) === "html" ? stripHtml(body) : body
+  return plainText.replace(/\s+/g, " ").trim().slice(0, 220)
+}
+
+function getArticlePublishedYear(article: CosmicArticle): string {
+  const metadata = getArticleMetadata(article)
+  const rawDate = metadata.publish_date || article.published_at || article.created_at
+
+  if (!rawDate) {
+    return "Draft"
+  }
+
+  const parsed = new Date(rawDate)
+  if (Number.isNaN(parsed.getTime())) {
+    return rawDate.slice(0, 4)
+  }
+
+  return String(parsed.getUTCFullYear())
+}
+
+function getArticlePublishedSortValue(article: CosmicArticle): number {
+  const metadata = getArticleMetadata(article)
+  const rawDate = metadata.publish_date || article.published_at || article.created_at
+
+  if (!rawDate) {
+    return 0
+  }
+
+  const parsed = new Date(rawDate)
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime()
+}
+
+function getArticleRatingLabel(article: CosmicArticle): string | null {
+  if (article.type === "albumrate") {
+    return article.metadata.score?.value ?? null
+  }
+
+  return "Read it"
+}
+
+function getArticleAccentStyle(article: CosmicArticle): AccentStyle {
+  if (article.type === "albumrate") {
+    const scoreKey = article.metadata.score?.key ?? ""
+    return SCORE_STYLES[scoreKey] ?? REVIEW_STYLE
+  }
+
+  return REVIEW_STYLE
+}
+
+function getArticlePrimaryLine(article: CosmicArticle): string {
+  return getArticleWriter(article) ?? "Brown Music Review"
+}
+
+function getArticleCoverImageUrl(article: CosmicArticle): string | null {
+  const coverImage = getArticleCoverImage(article)
+  return coverImage?.imgix_url ?? coverImage?.url ?? null
+}
+
+async function getPublishedArticlesByType<T extends CosmicArticle>(
   type: string,
-  slug: string,
-  options: Omit<GetObjectParams, "query"> = {},
-): Promise<CosmicMetadataSingleResponse<TMetadata>> {
-  return getObject<TMetadata>({
-    query: { type, slug },
-    ...options,
-  })
+  limit: number,
+): Promise<T[]> {
+  try {
+    const { objects } = await getCosmicClient().objects
+      .find({ type })
+      .status("published")
+      .limit(limit)
+
+    return (objects as T[]) ?? []
+  } catch {
+    return []
+  }
 }
 
-export async function getObjectById<
-  TMetadata extends CosmicMetadata = CosmicMetadata,
->(
-  id: string,
-  options: Omit<GetObjectParams, "query"> = {},
-): Promise<CosmicMetadataSingleResponse<TMetadata>> {
-  return getObject<TMetadata>({
-    query: { id },
-    ...options,
-  })
+function normalizeHomepageArticle(article: CosmicArticle): HomepageArticle {
+  const style = getArticleAccentStyle(article)
+
+  return {
+    id: article.id,
+    slug: article.slug,
+    href: `/reviews/${article.slug}`,
+    title: article.title,
+    artist: getArticlePrimaryLine(article),
+    reviewer: getArticlePrimaryLine(article),
+    year: getArticlePublishedYear(article),
+    genre: getArticleTypeLabel(article),
+    summary: getArticleSummary(article),
+    typeLabel: getArticleTypeLabel(article),
+    coverImage: getArticleCoverImageUrl(article),
+    ratingLabel: getArticleRatingLabel(article),
+    accentColor: style.accentColor,
+    labelColor: style.labelColor,
+    vinylLabel: style.vinylLabel,
+  }
+}
+
+export async function getHomepageArticles(
+  limit = ARTICLE_LIST_LIMIT,
+): Promise<HomepageArticle[]> {
+  const [albumRates, albumReviews] = await Promise.all([
+    getPublishedArticlesByType<AlbumRate>(ALBUM_RATE_TYPE, limit),
+    getPublishedArticlesByType<AlbumReview>(ALBUM_REVIEW_TYPE, limit),
+  ])
+
+  return [...albumRates, ...albumReviews]
+    .sort((left, right) => getArticlePublishedSortValue(right) - getArticlePublishedSortValue(left))
+    .slice(0, limit)
+    .map(normalizeHomepageArticle)
 }
