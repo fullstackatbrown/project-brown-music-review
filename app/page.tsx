@@ -1,139 +1,38 @@
-"use client";
-import EmailSignup from "./components/EmailSignup";
-/* Lines 2-5 omitted */
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence, useInView } from "framer-motion";
-import SplashCursor from "../components/SplashCursor";
+"use client"
 
-const RATING_LABELS: Record<number, string> = {
-  1: "trash it",
-  2: "skip it",
-  3: "rent it",
-  4: "buy it",
-  5: "crown it",
-};
+import Link from "next/link"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
+import { AnimatePresence, motion, useInView } from "framer-motion"
 
-const albums = [
-  {
-    id: 0,
-    cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
-    title: "Californication",
-    subtitle: null,
-    artist: "Red Hot Chili Peppers",
-    year: "1999",
-    genre: "Alternative Rock",
-    rating: 4,
-    tag: "Album Review",
-    accentColor: "#c8102e",
-    labelColor: "#c8102e",
-    vinylLabel: "WBR",
-    song: "/tmp_song.mp3",
-    reviewer: "Bryan Chung",
-    blurb:
-      "A sunburned, introspective record that trades manic energy for something wistful and weathered. Frusciante's return breathes life into every track.",
-  },
-  {
-    id: 1,
-    cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
-    title: "Good Kid, M.A.A.D City",
-    subtitle: null,
-    artist: "Kendrick Lamar",
-    year: "2012",
-    genre: "Hip-Hop",
-    rating: 5,
-    tag: "Staff Pick",
-    accentColor: "#1a6b3c",
-    labelColor: "#1a6b3c",
-    vinylLabel: "TDE",
-    song: "/tmp_song.mp3",
-    reviewer: "Bryan Chung",
-    blurb:
-      "A short film disguised as an album, shot entirely through memory and guilt. The Compton he paints breathes and threatens and loves all at once.",
-  },
-  {
-    id: 2,
-    cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
-    title: "To Pimp a Butterfly",
-    subtitle: null,
-    artist: "Kendrick Lamar",
-    year: "2015",
-    genre: "Hip-Hop / Jazz / Funk",
-    rating: 5,
-    tag: "Classic",
-    accentColor: "#b8860b",
-    labelColor: "#b8860b",
-    vinylLabel: "TDE",
-    song: "/tmp_song.mp3",
-    reviewer: "Bryan Chung",
-    blurb:
-      "Not an album — a reckoning. A sprawling, jazz-funk treatise on Blackness, fame, and self-destruction that left critics reaching for new vocabulary.",
-  },
-  {
-    id: 3,
-    cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
-    title: "Untitled Unmastered",
-    subtitle: null,
-    artist: "Kendrick Lamar",
-    year: "2016",
-    genre: "Hip-Hop",
-    rating: 3,
-    tag: "Revisited",
-    accentColor: "#1d3f8a",
-    labelColor: "#1d3f8a",
-    vinylLabel: "TDE",
-    song: "/tmp_song.mp3",
-    reviewer: "Bryan Chung",
-    blurb:
-      "Eight untitled demos that would be another artist's career highlight. A rare glimpse at Kendrick thinking out loud, pencil sketches in place of stone.",
-  },
-  {
-    id: 4,
-    cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
-    title: "Mr Morale and the Big Steppers",
-    subtitle: null,
-    artist: "Kendrick ",
-    year: "1997",
-    genre: "Art Rock",
-    rating: 5,
-    tag: "Essential",
-    accentColor: "#5c2d91",
-    labelColor: "#5c2d91",
-    vinylLabel: "PAR",
-    song: "/tmp_song.mp3",
-    reviewer: "Bryan Chung",
-    blurb:
-      "Twenty-eight years later it sounds more prescient than ever. A document of alienation built from guitars and dread, still unmatched in its ambition.",
-  },
-  {
-    id: 5,
-    cover: "/Pink-Floyd-Dark-Side-Of-The-Moon.png",
-    title: "Section 80",
-    subtitle: null,
-    artist: "Kendrick Lamar",
-    year: "1998",
-    genre: "R&B / Soul / Hip-Hop",
-    rating: 5,
-    tag: "Cornerstone",
-    accentColor: "#8b1a00",
-    labelColor: "#8b1a00",
-    vinylLabel: "RUF",
-    song: "/tmp_song.mp3",
-    reviewer: "Bryan Chung",
-    blurb:
-      "An album that arrived fully formed and has never been equaled. Hill performs the impossible: making raw heartbreak sound like catechism.",
-  },
-];
+import SplashCursor from "../components/SplashCursor"
+import type { HomepageArticle } from "@/lib/types"
+import EmailSignup from "./components/EmailSignup"
+
+const FALLBACK_COVER = "/bmr_logo.webp"
+
+type HomepageArticlesResponse = {
+  articles: HomepageArticle[]
+}
+
+function formatCount(value: number, isLoading: boolean): string {
+  if (isLoading) {
+    return ".."
+  }
+
+  return String(value).padStart(2, "0")
+}
 
 function VinylDisc({
   color,
   label,
   spinning,
-  size = 80,
+  size = 72,
 }: {
-  color: string;
-  label: string;
-  spinning: boolean;
-  size?: number;
+  color: string
+  label: string
+  spinning: boolean
+  size?: number
 }) {
   return (
     <motion.div
@@ -163,23 +62,22 @@ function VinylDisc({
         CURL={1}
       />
 
-      {/* Groove rings */}
-      {[0.72, 0.58, 0.46].map((r) => (
+      {[0.72, 0.58, 0.46].map((ring) => (
         <div
-          key={r}
+          key={ring}
           style={{
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%,-50%)",
-            width: `${r * 100}%`,
-            height: `${r * 100}%`,
+            width: `${ring * 100}%`,
+            height: `${ring * 100}%`,
             borderRadius: "50%",
             border: "1px solid rgba(255,255,255,0.04)",
           }}
         />
       ))}
-      {/* Sheen */}
+
       <div
         style={{
           position: "absolute",
@@ -189,7 +87,7 @@ function VinylDisc({
             "conic-gradient(from 30deg, rgba(255,255,255,0) 0deg, rgba(255,255,255,0.06) 40deg, rgba(255,255,255,0) 80deg, rgba(255,255,255,0.03) 200deg, rgba(255,255,255,0) 360deg)",
         }}
       />
-      {/* Center label */}
+
       <div
         style={{
           position: "absolute",
@@ -229,24 +127,22 @@ function VinylDisc({
         />
       </div>
     </motion.div>
-  );
+  )
 }
 
 function ReviewRow({
-  album,
+  article,
   index,
   onOpen,
 }: {
-  album: (typeof albums)[0];
-  index: number;
-  onOpen: (id: number) => void;
+  article: HomepageArticle
+  index: number
+  onOpen: (id: string) => void
 }) {
-  const [hovered, setHovered] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-
-  const ratingWord = RATING_LABELS[album.rating];
+  const [hovered, setHovered] = useState(false)
+  const [playing, setPlaying] = useState(false)
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: "-60px" })
 
   return (
     <motion.div
@@ -260,7 +156,7 @@ function ReviewRow({
       }}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
-      onClick={() => onOpen(album.id)}
+      onClick={() => onOpen(article.id)}
       style={{
         display: "grid",
         gridTemplateColumns: "52px 96px 1fr auto auto",
@@ -273,7 +169,6 @@ function ReviewRow({
         overflow: "hidden",
       }}
     >
-      {/* Hover fill */}
       <motion.div
         initial={{ scaleX: 0 }}
         animate={{ scaleX: hovered ? 1 : 0 }}
@@ -281,19 +176,18 @@ function ReviewRow({
         style={{
           position: "absolute",
           inset: 0,
-          background: album.accentColor,
+          background: article.accentColor,
           transformOrigin: "left",
           zIndex: 0,
           opacity: 0.04,
         }}
       />
 
-      {/* Index */}
       <span
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: "0.62rem",
-          color: hovered ? album.accentColor : "#bbb",
+          color: hovered ? article.accentColor : "#bbb",
           letterSpacing: "0.1em",
           zIndex: 1,
           transition: "color 0.2s",
@@ -304,7 +198,6 @@ function ReviewRow({
         {String(index + 1).padStart(2, "0")}
       </span>
 
-      {/* Vinyl + cover stack */}
       <div
         style={{
           position: "relative",
@@ -314,10 +207,9 @@ function ReviewRow({
           flexShrink: 0,
         }}
       >
-        {/* Album cover */}
         <motion.img
-          src={album.cover}
-          alt={album.title}
+          src={article.coverImage ?? FALLBACK_COVER}
+          alt={article.title}
           animate={{ x: hovered ? -8 : 0 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           style={{
@@ -330,9 +222,10 @@ function ReviewRow({
             objectFit: "cover",
             boxShadow: "3px 3px 0 #0a0a0a",
             zIndex: 2,
+            background: "#f4f4f4",
           }}
         />
-        {/* Vinyl peeking */}
+
         <motion.div
           animate={{ x: hovered ? 10 : 0, opacity: hovered ? 1 : 0.6 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
@@ -343,21 +236,20 @@ function ReviewRow({
             transform: "translateY(-50%)",
             zIndex: 1,
           }}
-          onClick={(e) => {
-            e.stopPropagation();
-            setPlaying((p) => !p);
+          onClick={(event) => {
+            event.stopPropagation()
+            setPlaying((value) => !value)
           }}
         >
           <VinylDisc
-            color={album.labelColor}
-            label={album.vinylLabel}
+            color={article.labelColor}
+            label={article.vinylLabel}
             spinning={playing}
             size={64}
           />
         </motion.div>
       </div>
 
-      {/* Text block */}
       <div style={{ zIndex: 1, minWidth: 0 }}>
         <div
           style={{
@@ -373,14 +265,14 @@ function ReviewRow({
               fontSize: "1.15rem",
               fontStyle: "italic",
               fontWeight: 700,
-              color: hovered ? album.accentColor : "#0a0a0a",
+              color: hovered ? article.accentColor : "#0a0a0a",
               transition: "color 0.2s",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
           >
-            {album.title}
+            {article.title}
           </span>
           <span
             style={{
@@ -391,7 +283,7 @@ function ReviewRow({
               flexShrink: 0,
             }}
           >
-            {album.artist}
+            {article.artist}
           </span>
         </div>
         <p
@@ -407,11 +299,10 @@ function ReviewRow({
             overflow: "hidden",
           }}
         >
-          {album.blurb}
+          {article.summary}
         </p>
       </div>
 
-      {/* Rating */}
       <div style={{ zIndex: 1, textAlign: "right", flexShrink: 0 }}>
         <div
           style={{
@@ -420,13 +311,13 @@ function ReviewRow({
             fontStyle: "italic",
             fontSize: "0.8rem",
             fontWeight: 700,
-            color: album.accentColor,
-            borderBottom: `2px solid ${album.accentColor}`,
+            color: article.accentColor,
+            borderBottom: `2px solid ${article.accentColor}`,
             paddingBottom: 1,
             marginBottom: 4,
           }}
         >
-          {ratingWord}
+          {article.ratingLabel ?? article.typeLabel}
         </div>
         <div
           style={{
@@ -437,13 +328,12 @@ function ReviewRow({
             textTransform: "uppercase",
           }}
         >
-          {album.year} · {album.genre}
+          {article.year} / {article.genre}
         </div>
       </div>
 
-      {/* Tag pill + reviewer */}
       <div
-        style={{ zIndex: 1, textAlign: "right", flexShrink: 0, minWidth: 90 }}
+        style={{ zIndex: 1, textAlign: "right", flexShrink: 0, minWidth: 110 }}
       >
         <div
           style={{
@@ -453,12 +343,12 @@ function ReviewRow({
             letterSpacing: "0.18em",
             textTransform: "uppercase",
             color: "#fff",
-            background: album.accentColor,
+            background: article.accentColor,
             padding: "3px 8px",
             marginBottom: 5,
           }}
         >
-          {album.tag}
+          {article.typeLabel}
         </div>
         <div
           style={{
@@ -467,30 +357,37 @@ function ReviewRow({
             color: "#aaa",
           }}
         >
-          {album.reviewer}
+          {article.reviewer}
         </div>
       </div>
     </motion.div>
-  );
+  )
 }
 
 function ReviewModal({
-  album,
+  article,
   onClose,
 }: {
-  album: (typeof albums)[0];
-  onClose: () => void;
+  article: HomepageArticle
+  onClose: () => void
 }) {
-  const [spinning, setSpinning] = useState(false);
-  const ratingWord = RATING_LABELS[album.rating];
+  const [spinning, setSpinning] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose()
+      }
+    }
+
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [onClose])
+
+  useEffect(() => {
+    router.prefetch(article.href)
+  }, [article.href, router])
 
   return (
     <motion.div
@@ -516,7 +413,7 @@ function ReviewModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 32, scale: 0.97 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
         style={{
           background: "#fff",
           maxWidth: 780,
@@ -528,7 +425,6 @@ function ReviewModal({
           position: "relative",
         }}
       >
-        {/* Left: artwork */}
         <div
           style={{
             background: "#f4f4f4",
@@ -542,14 +438,13 @@ function ReviewModal({
             overflow: "hidden",
           }}
         >
-          {/* Accent circle behind */}
           <div
             style={{
               position: "absolute",
               width: 320,
               height: 320,
               borderRadius: "50%",
-              background: album.accentColor,
+              background: article.accentColor,
               opacity: 0.06,
               top: "50%",
               left: "50%",
@@ -557,7 +452,6 @@ function ReviewModal({
             }}
           />
 
-          {/* Cover + vinyl */}
           <div style={{ position: "relative", width: 200, height: 200 }}>
             <div
               style={{
@@ -567,18 +461,18 @@ function ReviewModal({
                 zIndex: 1,
                 cursor: "pointer",
               }}
-              onClick={() => setSpinning((s) => !s)}
+              onClick={() => setSpinning((value) => !value)}
             >
               <VinylDisc
-                color={album.labelColor}
-                label={album.vinylLabel}
+                color={article.labelColor}
+                label={article.vinylLabel}
                 spinning={spinning}
                 size={200}
               />
             </div>
             <motion.img
-              src={album.cover}
-              alt={album.title}
+              src={article.coverImage ?? FALLBACK_COVER}
+              alt={article.title}
               initial={{ x: 0 }}
               animate={{ x: spinning ? -20 : 0 }}
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
@@ -591,31 +485,31 @@ function ReviewModal({
                 objectFit: "cover",
                 boxShadow: "6px 6px 0 #0a0a0a",
                 zIndex: 2,
+                background: "#fff",
               }}
             />
           </div>
 
           <button
-            onClick={() => setSpinning((s) => !s)}
+            onClick={() => setSpinning((value) => !value)}
             style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: "0.62rem",
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              background: spinning ? album.accentColor : "transparent",
-              color: spinning ? "#fff" : album.accentColor,
-              border: `1.5px solid ${album.accentColor}`,
+              background: spinning ? article.accentColor : "transparent",
+              color: spinning ? "#fff" : article.accentColor,
+              border: `1.5px solid ${article.accentColor}`,
               padding: "8px 20px",
               cursor: "pointer",
               zIndex: 3,
               transition: "all 0.2s",
             }}
           >
-            {spinning ? "⏸ stop spinning" : "▶ spin the record"}
+            {spinning ? "stop spinning" : "spin the record"}
           </button>
         </div>
 
-        {/* Right: info */}
         <div
           style={{
             padding: "40px 36px",
@@ -623,7 +517,6 @@ function ReviewModal({
             flexDirection: "column",
           }}
         >
-          {/* Close */}
           <button
             onClick={onClose}
             style={{
@@ -639,7 +532,7 @@ function ReviewModal({
               marginBottom: 16,
             }}
           >
-            ✕ close
+            close
           </button>
 
           <span
@@ -650,13 +543,13 @@ function ReviewModal({
               letterSpacing: "0.2em",
               textTransform: "uppercase",
               color: "#fff",
-              background: album.accentColor,
+              background: article.accentColor,
               padding: "3px 9px",
               alignSelf: "flex-start",
               marginBottom: 14,
             }}
           >
-            {album.tag}
+            {article.typeLabel}
           </span>
 
           <h2
@@ -665,12 +558,12 @@ function ReviewModal({
               fontStyle: "italic",
               fontSize: "2rem",
               fontWeight: 700,
-              color: album.accentColor,
+              color: article.accentColor,
               lineHeight: 1.1,
               marginBottom: 6,
             }}
           >
-            {album.title}
+            {article.title}
           </h2>
 
           <p
@@ -683,7 +576,7 @@ function ReviewModal({
               marginBottom: 4,
             }}
           >
-            {album.artist}
+            {article.artist}
           </p>
           <p
             style={{
@@ -693,7 +586,7 @@ function ReviewModal({
               marginBottom: 20,
             }}
           >
-            {album.year} · {album.genre}
+            {article.year} / {article.genre}
           </p>
 
           <div
@@ -711,40 +604,13 @@ function ReviewModal({
                 fontStyle: "italic",
                 fontSize: "1.4rem",
                 fontWeight: 700,
-                color: album.accentColor,
-                borderBottom: `2px solid ${album.accentColor}`,
+                color: article.accentColor,
+                borderBottom: `2px solid ${article.accentColor}`,
                 paddingBottom: 2,
               }}
             >
-              {ratingWord}
+              {article.ratingLabel ?? article.typeLabel}
             </span>
-            <div
-              style={{
-                display: "flex",
-                gap: 5,
-                marginTop: 10,
-                flexWrap: "wrap",
-              }}
-            >
-              {Object.values(RATING_LABELS).map((lbl, i) => (
-                <span
-                  key={lbl}
-                  style={{
-                    fontFamily: "'DM Mono', monospace",
-                    fontSize: "0.52rem",
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    padding: "3px 7px",
-                    border: `1px solid ${i < album.rating ? album.accentColor : "#e8e8e8"}`,
-                    background:
-                      i < album.rating ? album.accentColor : "transparent",
-                    color: i < album.rating ? "#fff" : "#ccc",
-                  }}
-                >
-                  {lbl}
-                </span>
-              ))}
-            </div>
           </div>
 
           <div
@@ -765,7 +631,7 @@ function ReviewModal({
               flex: 1,
             }}
           >
-            {album.blurb}
+            {article.summary}
           </p>
 
           <p
@@ -774,25 +640,109 @@ function ReviewModal({
               fontSize: "0.72rem",
               color: "#aaa",
               marginTop: 20,
+              marginBottom: 20,
             }}
           >
             Reviewed by{" "}
             <strong style={{ color: "#555", fontWeight: 500 }}>
-              {album.reviewer}
+              {article.reviewer}
             </strong>
           </p>
+
+          <Link
+            href={article.href}
+            style={{
+              alignSelf: "flex-start",
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "0.62rem",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "#fff",
+              background: article.accentColor,
+              padding: "10px 16px",
+              textDecoration: "none",
+            }}
+          >
+            Read full piece
+          </Link>
         </div>
       </motion.div>
     </motion.div>
-  );
+  )
 }
 
 export default function HomePage() {
-  const [openId, setOpenId] = useState<number | null>(null);
-  const openAlbum =
-    openId !== null ? albums.find((a) => a.id === openId) : null;
+  const [articles, setArticles] = useState<HomepageArticle[]>([])
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const headerRef = useRef(null)
 
-  const headerRef = useRef(null);
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadArticles() {
+      try {
+        setIsLoading(true)
+        const response = await fetch("/api/homepage-articles")
+        const payload = (await response.json()) as HomepageArticlesResponse & {
+          message?: string
+        }
+
+        if (!response.ok) {
+          throw new Error(payload.message ?? "Failed to load homepage articles")
+        }
+
+        if (!cancelled) {
+          setArticles(payload.articles)
+          setLoadError(null)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(
+            error instanceof Error ? error.message : "Failed to load homepage articles",
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadArticles()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const openArticle =
+    openId !== null ? articles.find((article) => article.id === openId) ?? null : null
+
+  const stats = useMemo(
+    () => [
+      {
+        label: "Pieces live",
+        value: formatCount(articles.length, isLoading),
+      },
+      {
+        label: "Album rates",
+        value: formatCount(
+          articles.filter((article) => article.typeLabel === "Album Rate").length,
+          isLoading,
+        ),
+      },
+      {
+        label: "Album reviews",
+        value: formatCount(
+          articles.filter((article) => article.typeLabel === "Album Review").length,
+          isLoading,
+        ),
+      },
+    ],
+    [articles, isLoading],
+  )
 
   return (
     <>
@@ -804,7 +754,6 @@ export default function HomePage() {
         ::-webkit-scrollbar-thumb { background: #ddd; }
       `}</style>
 
-      {/* HERO HEADER */}
       <motion.div
         ref={headerRef}
         initial={{ opacity: 0 }}
@@ -817,7 +766,6 @@ export default function HomePage() {
           overflow: "hidden",
         }}
       >
-        {/* Large decorative background text */}
         <div
           style={{
             position: "absolute",
@@ -852,7 +800,7 @@ export default function HomePage() {
               marginBottom: 14,
             }}
           >
-            Bryan Musoc Review — Home
+            Brown Music Review / Home
           </motion.p>
 
           <motion.h2
@@ -872,12 +820,11 @@ export default function HomePage() {
               maxWidth: 640,
             }}
           >
-            What we've been
+            What we&apos;ve been
             <br />
             <em style={{ color: "#555" }}>listening to.</em>
           </motion.h2>
 
-          {/* Decorative rule with stats */}
           <motion.div
             initial={{ opacity: 0, scaleX: 0 }}
             animate={{ opacity: 1, scaleX: 1 }}
@@ -893,13 +840,10 @@ export default function HomePage() {
               paddingTop: 20,
               borderTop: "1px solid #e8e8e8",
               transformOrigin: "left",
+              flexWrap: "wrap",
             }}
           >
-            {[
-              { label: "Reviews this month", value: "06" },
-              { label: "Staff picks", value: "02" },
-              { label: "Average rating", value: "buy it" },
-            ].map((stat) => (
+            {stats.map((stat) => (
               <div key={stat.label}>
                 <div
                   style={{
@@ -931,7 +875,6 @@ export default function HomePage() {
         </div>
       </motion.div>
 
-      {/* COLUMN HEADERS */}
       <div
         style={{
           display: "grid",
@@ -942,39 +885,84 @@ export default function HomePage() {
           background: "#fafafa",
         }}
       >
-        {["#", "", "Title / Artist", "Rating", "Tag"].map((h, i) => (
+        {["#", "", "Title / Writer", "Rating", "Type"].map((heading, index) => (
           <span
-            key={i}
+            key={heading}
             style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: "0.52rem",
               letterSpacing: "0.2em",
               textTransform: "uppercase",
               color: "#ccc",
-              textAlign: i === 3 ? "right" : i === 4 ? "right" : undefined,
+              textAlign: index === 3 ? "right" : index === 4 ? "right" : undefined,
             }}
           >
-            {h}
+            {heading}
           </span>
         ))}
       </div>
 
-      {/* REVIEW ROWS */}
       <div style={{ padding: "0 48px 80px" }}>
-        {albums.map((album, index) => (
-          <ReviewRow
-            key={album.id}
-            album={album}
-            index={index}
-            onOpen={setOpenId}
-          />
-        ))}
+        {isLoading && (
+          <div
+            style={{
+              padding: "32px 0",
+              borderBottom: "1px solid #e2e2e2",
+              color: "#888",
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "0.75rem",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+            }}
+          >
+            Loading latest Cosmic entries...
+          </div>
+        )}
+
+        {!isLoading && loadError && (
+          <div
+            style={{
+              padding: "32px 0",
+              borderBottom: "1px solid #e2e2e2",
+              color: "#8b1a00",
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "0.9rem",
+              lineHeight: 1.5,
+            }}
+          >
+            {loadError}
+          </div>
+        )}
+
+        {!isLoading && !loadError && articles.length === 0 && (
+          <div
+            style={{
+              padding: "32px 0",
+              borderBottom: "1px solid #e2e2e2",
+              color: "#666",
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "0.9rem",
+              lineHeight: 1.5,
+            }}
+          >
+            No published Cosmic articles are available yet.
+          </div>
+        )}
+
+        {!isLoading &&
+          !loadError &&
+          articles.map((article, index) => (
+            <ReviewRow
+              key={article.id}
+              article={article}
+              index={index}
+              onOpen={setOpenId}
+            />
+          ))}
       </div>
 
-        {/* EMAIL SIGNUP */}
-        <EmailSignup />
+      <EmailSignup />
 
-      {/* FOOTER */}
       <footer
         style={{
           borderTop: "1.5px solid #0a0a0a",
@@ -982,6 +970,8 @@ export default function HomePage() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          gap: 16,
+          flexWrap: "wrap",
         }}
       >
         <span
@@ -994,7 +984,7 @@ export default function HomePage() {
             letterSpacing: "0.08em",
           }}
         >
-          teeeheee
+          brown music review
         </span>
         <span
           style={{
@@ -1005,16 +995,15 @@ export default function HomePage() {
             color: "#ccc",
           }}
         >
-          Bryan Chung @ MIT '29 · Jennifer Park @ Tufts '29
+          Bryan Chung @ MIT &apos;29 / Jennifer Park @ Tufts &apos;29
         </span>
       </footer>
 
-      {/* MODAL */}
       <AnimatePresence>
-        {openAlbum && (
-          <ReviewModal album={openAlbum} onClose={() => setOpenId(null)} />
+        {openArticle && (
+          <ReviewModal article={openArticle} onClose={() => setOpenId(null)} />
         )}
       </AnimatePresence>
     </>
-  );
+  )
 }
