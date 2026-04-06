@@ -54,7 +54,7 @@ export default function EmailSignup() {
           color: "#e01010",
           letterSpacing: "0.1em",
         }}>
-          ✓ You're subscribed!
+          ✓ You&apos;re subscribed!
         </p>
       ) : (
         <form onSubmit={handleSubmit} style={{

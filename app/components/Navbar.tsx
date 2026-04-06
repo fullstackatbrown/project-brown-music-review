@@ -9,10 +9,13 @@ interface Page {
 }
 
 const pages: Page[] = [
+    {name: "Home", path: "/"},
+    {name: "Review", path: "/"},
     {name: "Deep Dive", path: "/deepdive"},
-    {name: "Opinions", path: "/opinions"},
-    {name: "Narratives", path: "/narratives"},
     {name: "Hot Topics", path: "/hottopics"},
+    {name: "Opinions", path: "/opinions"},
+    {name: "Narrative", path: "/narratives"},
+    {name: "About", path: "/about"},
 ]
 
 export default function Navbar() {
@@ -29,10 +32,6 @@ export default function Navbar() {
                 </Link>
             ))}
 
-            <button className="bg-foreground text-background rounded-sm py-1.5 px-3"
-                onClick={() => alert("Button")}>
-                Button
-            </button>
         </div>
     </header>);
 }
