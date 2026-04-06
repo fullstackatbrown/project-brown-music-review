@@ -489,6 +489,7 @@ function ReviewModal({
               }}
             />
           </div>
+          <div className="absolute left-[707px] top-[422px] w-[647px] h-0 border-t-[5px] border-black" />
 
           <button
             onClick={() => setSpinning((value) => !value)}
@@ -589,13 +590,16 @@ function ReviewModal({
             {article.year} / {article.genre}
           </p>
 
-          <div
-            style={{
-              height: 1,
-              background: "#e8e8e8",
-              marginBottom: 16,
-            }}
-          />
+            <div className="flex flex-col items-center">
+              <div className="w-[315px] h-[51px] bg-[#D20000] rounded-full flex items-center justify-center mb-[24px]">
+                <span className="text-white text-[32px] font-semibold">Narratives</span>
+              </div>
+              <div className="w-[315px] h-[315px] bg-neutral-200 rounded-[30px] mb-[75px]" />
+              <div className="text-center w-[312px]">
+                <p className="text-[32px] font-bold leading-tight">ARTICLE TITLE?<br/></p>
+                <p className="text-[20px] font-normal italic text-neutral-800">author</p>
+              </div>
+            </div>
 
           <div style={{ marginBottom: 20 }}>
             <span
@@ -869,11 +873,13 @@ export default function HomePage() {
                 >
                   {stat.label}
                 </div>
+                <h2 className="text-white text-[45px] font-bold mb-4">title</h2>
+                <p className="text-white/80 text-[28px] font-medium text-center leading-normal">
+                  short description short description short description short description short description short description
+                </p>
               </div>
-            ))}
-          </motion.div>
-        </div>
-      </motion.div>
+            </div>
+          </div>
 
       <div
         style={{
