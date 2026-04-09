@@ -878,8 +878,10 @@ export default function HomePage() {
                   short description short description short description short description short description short description
                 </p>
               </div>
-            </div>
-          </div>
+            ))}
+          </motion.div>
+        </div>
+      </motion.div>
 
       <div
         style={{
