@@ -779,6 +779,7 @@ export default function NarrativesPage() {
             gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
             gap: 28,
             maxWidth: 1200,
+            margin: "0 auto",
           }}
         >
           {latest.slice(0, displayedCount).map((article, idx) => (

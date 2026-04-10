@@ -237,14 +237,30 @@ function WideFeatureCard({ article }: { article: HomepageArticle }) {
 function AutoScrollCarousel({ articles }: { articles: HomepageArticle[] }) {
   const labels = ["Deep Dive", "Narratives", "Hot Topics", "Opinions", "Deep Dive", "Narratives"]
 
-  // Duplicate the items so the scroll can loop seamlessly
+  // Duplicate the items so the scroll can loop seamlessly. Because the two
+  // copies are identical, when the animation wraps back to its start position
+  // the visible layout is pixel-identical — the viewer sees a continuous reel.
   const items = [...articles, ...articles]
 
+  // Each card is 240px wide with a 24px gap (Tailwind `gap-6` = 1.5rem = 24px),
+  // so one full "stride" from the start of one card to the start of the next is
+  // exactly 264px. Animating by `articles.length * STRIDE` lands the second copy
+  // of the list precisely where the first copy started, making the loop seamless.
+  const CARD_WIDTH = 240
+  const CARD_GAP = 24
+  const STRIDE = CARD_WIDTH + CARD_GAP
+  const loopDistance = articles.length * STRIDE
+
   return (
-    <div className="relative w-full overflow-hidden">
+    <div
+      className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]"
+    >
       <motion.div
         className="flex gap-6"
-        animate={{ x: [0, -(articles.length * 260)] }}
+        // Scroll left-to-right: start with the list shifted one full copy to
+        // the left, then ease back to 0. Items visually enter from the left
+        // edge and exit on the right.
+        animate={{ x: [-loopDistance, 0] }}
         transition={{
           x: {
             repeat: Infinity,
@@ -425,8 +441,13 @@ export default function HomePage() {
       {/* HERO: Record player left, Latest From + scrolling cards right  */}
       {/* ============================================================ */}
       <section className="relative w-full flex" style={{ minHeight: 520 }}>
-        {/* Left: Record player */}
-        <div className="relative flex-shrink-0" style={{ width: "38%" }}>
+        {/* Left: Record player.
+            Fixed pixel width (was "38%") — on wide viewports 38% left hundreds
+            of pixels of empty space to the right of the vinyl, pushing the
+            "Latest From" heading + carousel far toward the right edge. A fixed
+            width that just contains the vinyl lets the right column grow and
+            makes the carousel start further left on the page naturally. */}
+        <div className="relative flex-shrink-0" style={{ width: 440 }}>
           <div className="absolute" style={{ left: 20, top: 30 }}>
             <SpinningVinyl size={400} />
           </div>
@@ -452,7 +473,10 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Right: Latest From + auto-scrolling article carousel */}
+        {/* Right: Latest From + auto-scrolling article carousel.
+            Because the left column is now a fixed 440px (instead of 38%),
+            this column grows wider on all viewports — the heading and
+            carousel naturally start farther left on the page. */}
         <div className="flex-1 flex flex-col pt-6 pr-0 overflow-hidden">
           {/* Latest From heading */}
           <div className="pr-12 mb-8">

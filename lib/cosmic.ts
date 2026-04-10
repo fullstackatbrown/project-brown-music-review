@@ -12,6 +12,12 @@ import type {
 const ALBUM_RATE_TYPE = process.env.COSMIC_TYPE_ALBUM_RATE ?? "albumrate"
 const ALBUM_REVIEW_TYPE = process.env.COSMIC_TYPE_ALBUM_REVIEW ?? "albumreview"
 
+// Shared cache tag for every Cosmic read. A single revalidateTag(COSMIC_TAG)
+// call (from the /api/revalidate webhook) invalidates all Cosmic-backed data
+// at once. The 1-hour revalidate is a safety net in case the webhook fails.
+export const COSMIC_TAG = "cosmic-content"
+const COSMIC_REVALIDATE_SECONDS = 60 * 60
+
 export type CosmicArticle = AlbumRate | AlbumReview
 
 type ArticleMetadata = {
@@ -167,7 +173,7 @@ async function findArticleBySlug(slug: string): Promise<CosmicArticle | null> {
 export const getArticleBySlug = unstable_cache(
   async (slug: string) => findArticleBySlug(slug),
   ["cosmic-article-by-slug"],
-  { revalidate: 300 },
+  { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
 )
 
 export function getArticleBodyFormat<T extends CosmicArticle>(
@@ -247,6 +253,27 @@ function getArticlePublishedYear(article: CosmicArticle): string {
   return String(parsed.getUTCFullYear())
 }
 
+export function getArticlePublishedDateDisplay(article: CosmicArticle): string | null {
+  const metadata = getArticleMetadata(article)
+  const rawDate = metadata.publish_date || article.published_at || article.created_at
+
+  if (!rawDate) {
+    return null
+  }
+
+  const parsed = new Date(rawDate)
+  if (Number.isNaN(parsed.getTime())) {
+    return null
+  }
+
+  return parsed.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  })
+}
+
 function getArticlePublishedSortValue(article: CosmicArticle): number {
   const metadata = getArticleMetadata(article)
   const rawDate = metadata.publish_date || article.published_at || article.created_at
@@ -323,9 +350,7 @@ function normalizeHomepageArticle(article: CosmicArticle): HomepageArticle {
   }
 }
 
-export async function getHomepageArticles(
-  limit = ARTICLE_LIST_LIMIT,
-): Promise<HomepageArticle[]> {
+async function loadHomepageArticles(limit: number): Promise<HomepageArticle[]> {
   const [albumRates, albumReviews] = await Promise.all([
     getPublishedArticlesByType<AlbumRate>(ALBUM_RATE_TYPE, limit),
     getPublishedArticlesByType<AlbumReview>(ALBUM_REVIEW_TYPE, limit),
@@ -336,3 +361,9 @@ export async function getHomepageArticles(
     .slice(0, limit)
     .map(normalizeHomepageArticle)
 }
+
+export const getHomepageArticles = unstable_cache(
+  async (limit: number = ARTICLE_LIST_LIMIT) => loadHomepageArticles(limit),
+  ["cosmic-homepage-articles"],
+  { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
+)

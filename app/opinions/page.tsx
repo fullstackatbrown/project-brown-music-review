@@ -274,7 +274,7 @@ export default function OpinionsPage() {
           <div className="h-[2px] w-10 bg-[#D20000]" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1200px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1200px] mx-auto">
           {rest.slice(0, displayedCount).map((article, idx) => (
             <OpinionCard key={article.id} article={article} index={idx} />
           ))}

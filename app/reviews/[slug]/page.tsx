@@ -1,6 +1,7 @@
 import {
   getArticleBySlug,
   getArticleCoverImage,
+  getArticlePublishedDateDisplay,
   getArticleTypeLabel,
   getArticleWriter,
 } from "@/lib/cosmic"
@@ -19,43 +20,54 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
   const coverImage = getArticleCoverImage(article)
   const writer = getArticleWriter(article)
   const articleTypeLabel = getArticleTypeLabel(article)
+  const publishedDate = getArticlePublishedDateDisplay(article)
   const imageSrc = coverImage?.imgix_url ?? coverImage?.url
 
   return (
     <div>
-      {/* white bg box up top */}
-      <section className="bg-white px-16 py-12">
-        <div className="flex items-start gap-8 max-w-5xl mx-auto">
-          {/* image */}
+      {/* NYT-style vertical article layout:
+          type label → title → divider → cover image → byline → divider → body */}
+      <section className="bg-white px-6 sm:px-12 lg:px-16 py-12">
+        <article className="mx-auto max-w-3xl">
+          <span className="mb-3 block text-xs font-mono tracking-widest uppercase text-red-600">
+            {articleTypeLabel}
+          </span>
+
+          <h1 className="mb-6 font-serif text-4xl font-bold leading-tight sm:text-5xl">
+            {article.title}
+          </h1>
+
+          <div className="mb-8 h-px w-full bg-gray-200" />
+
           {imageSrc && (
-            <div className="relative w-[55%] shrink-0">
+            <div className="relative mb-4 w-full overflow-hidden rounded-md">
               <Image
                 src={imageSrc}
                 alt={article.title}
-                className="w-full h-auto"
-                width={600}
-                height={600}
+                className="h-auto w-full"
+                width={1200}
+                height={800}
+                priority
               />
             </div>
           )}
 
-          {/* review content */}
-          <div className="flex flex-col justify-center pt-8">
-            <span className="text-xs font-mono tracking-widest uppercase text-red-600 mb-2">
-              {articleTypeLabel}
-            </span>
-            <h1 className="text-4xl font-bold font-serif mb-2">
-              {article.title}
-            </h1>
-            {writer && (
-              <p className="text-sm text-gray-500 mb-6">
-                Reviewed by <strong className="text-black">{writer}</strong>
-              </p>
-            )}
-            <div className="w-full h-px bg-gray-200 mb-6" />
-            <ArticleBody article={article} />
-          </div>
-        </div>
+          {(writer || publishedDate) && (
+            <p className="mb-8 text-sm text-gray-500">
+              {writer && (
+                <>
+                  By <strong className="text-black">{writer}</strong>
+                </>
+              )}
+              {writer && publishedDate && <span className="mx-2">·</span>}
+              {publishedDate && <span>{publishedDate}</span>}
+            </p>
+          )}
+
+          <div className="mb-8 h-px w-full bg-gray-200" />
+
+          <ArticleBody article={article} />
+        </article>
       </section>
     </div>
   )
