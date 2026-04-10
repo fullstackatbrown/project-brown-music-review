@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
-    const articles = await getHomepageArticles()
+    const articles = await getHomepageArticles(20)
     return NextResponse.json({ articles })
   } catch (error) {
     const message =

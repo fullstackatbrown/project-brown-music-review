@@ -5,6 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --font-serif: var(--font-playfair);
+  --font-mono: var(--font-dm-mono);
 
   --hover: var(--color-blue-600)
 ;

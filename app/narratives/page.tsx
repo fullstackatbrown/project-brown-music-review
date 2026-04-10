@@ -1,8 +1,9 @@
 "use client";
+import Image from "next/image";
 import EmailSignup from "../components/EmailSignup";
 import { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import SplashCursor from "../components/SplashCursor";
+
 
 // Article data structure
 const articles = [
@@ -370,6 +371,7 @@ function FeaturedSection({ article }: { article: (typeof articles)[0] }) {
           animate={inView ? { opacity: 1, scale: 1 } : {}}
           transition={{ duration: 0.6, delay: 0.15 }}
           style={{
+            position: "relative",
             width: 280,
             height: 280,
             borderRadius: 8,
@@ -378,10 +380,11 @@ function FeaturedSection({ article }: { article: (typeof articles)[0] }) {
             border: `2px solid ${article.accentColor}`,
           }}
         >
-          <img
+          <Image
             src={article.cover}
             alt={article.title}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            fill
+            style={{ objectFit: "cover" }}
           />
         </motion.div>
 
@@ -857,7 +860,7 @@ export default function NarrativesPage() {
             color: "#ccc",
           }}
         >
-          Bryan Chung @ MIT '29 · Jennifer Park @ Tufts '29
+          Bryan Chung @ MIT &apos;29 · Jennifer Park @ Tufts &apos;29
         </span>
       </footer>
     </>

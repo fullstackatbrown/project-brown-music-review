@@ -1,1015 +1,534 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
-import { AnimatePresence, motion, useInView } from "framer-motion"
+import Image from "next/image"
+import { useEffect, useMemo, useState } from "react"
+import { motion } from "framer-motion"
 
-import SplashCursor from "../components/SplashCursor"
 import type { HomepageArticle } from "@/lib/types"
 import EmailSignup from "./components/EmailSignup"
-
-const FALLBACK_COVER = "/bmr_logo.webp"
+import turntableArm from "./assets/69083a19ea0c16a5b974b718a75cd1d08b245ce6.png"
 
 type HomepageArticlesResponse = {
   articles: HomepageArticle[]
 }
 
-function formatCount(value: number, isLoading: boolean): string {
-  if (isLoading) {
-    return ".."
-  }
+const MOCK_TITLES = [
+  "The Sound of Silence Revisited",
+  "When Jazz Met Hip-Hop",
+  "Vinyl Dreams in a Digital Age",
+  "The Art of the B-Side",
+  "Echoes From the Underground",
+  "Rhythm & Rebellion",
+  "Notes on a Genre in Flux",
+  "Frequency and Feeling",
+  "The Lost Tapes",
+  "Beyond the Bassline",
+  "Melody as Memory",
+  "Sonic Landscapes",
+  "The Groove Manifesto",
+  "Chords of Change",
+  "Rewind, Replay, Reimagine",
+  "Static and Soul",
+  "The Backbeat Diaries",
+  "Amplified Emotions",
+  "Turntable Philosophy",
+  "Waveforms and Wanderlust",
+]
 
-  return String(value).padStart(2, "0")
+const MOCK_BLURBS = [
+  "A deep exploration of how silence and space define the most powerful moments in music history.",
+  "Tracing the unexpected connections between two genres that changed everything.",
+  "Why the warmth of analog still matters in an era of infinite streaming.",
+  "The forgotten tracks that shaped careers and redefined artistic direction.",
+  "How underground scenes continue to push the boundaries of popular music.",
+  "An examination of music as protest, from folk to punk to hip-hop.",
+]
+
+const MOCK_AUTHORS = [
+  "Bryan Chung",
+  "Jennifer Park",
+  "Thomas Lu",
+  "Sarah Kim",
+  "Alex Rivera",
+]
+
+function makeMockArticle(index: number): HomepageArticle {
+  return {
+    id: `mock-${index}`,
+    slug: "",
+    href: "#",
+    title: MOCK_TITLES[index % MOCK_TITLES.length],
+    artist: MOCK_AUTHORS[index % MOCK_AUTHORS.length],
+    reviewer: MOCK_AUTHORS[index % MOCK_AUTHORS.length],
+    year: "2026",
+    genre: "",
+    summary: MOCK_BLURBS[index % MOCK_BLURBS.length],
+    typeLabel: "Article",
+    coverImage: null,
+    ratingLabel: null,
+    accentColor: "#D20000",
+    labelColor: "#D20000",
+    vinylLabel: "BMR",
+  }
 }
 
-function VinylDisc({
-  color,
-  label,
-  spinning,
-  size = 72,
-}: {
-  color: string
-  label: string
-  spinning: boolean
-  size?: number
-}) {
+function fillSlots(
+  articles: HomepageArticle[],
+  count: number
+): HomepageArticle[] {
+  const result = articles.slice(0, count)
+  for (let i = result.length; i < count; i++) {
+    result.push(makeMockArticle(i))
+  }
+  return result
+}
+
+/* ------------------------------------------------------------------ */
+/*  Spinning Vinyl Record                                              */
+/* ------------------------------------------------------------------ */
+function SpinningVinyl({ size = 620 }: { size?: number }) {
   return (
-    <motion.div
-      animate={{ rotate: spinning ? 360 : 0 }}
-      transition={
-        spinning
-          ? { repeat: Infinity, duration: 2.6, ease: "linear" }
-          : { duration: 0.3 }
-      }
-      style={{
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        background:
-          "radial-gradient(circle at 50%, #2a2a2a 0%, #111 35%, #060606 100%)",
-        boxShadow: "0 2px 18px rgba(0,0,0,0.5)",
-        position: "relative",
-        flexShrink: 0,
-        overflow: "hidden",
-      }}
-    >
-      <SplashCursor
-        SPLAT_FORCE={1500}
-        SPLAT_RADIUS={0.08}
-        DENSITY_DISSIPATION={6}
-        VELOCITY_DISSIPATION={4}
-        CURL={1}
-      />
-
-      {[0.72, 0.58, 0.46].map((ring) => (
-        <div
-          key={ring}
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%,-50%)",
-            width: `${ring * 100}%`,
-            height: `${ring * 100}%`,
-            borderRadius: "50%",
-            border: "1px solid rgba(255,255,255,0.04)",
-          }}
-        />
-      ))}
-
-      <div
+    <div className="relative" style={{ width: size, height: size }}>
+      {/* Everything spins together as one unit */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+        className="absolute inset-0 rounded-full"
         style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "50%",
           background:
-            "conic-gradient(from 30deg, rgba(255,255,255,0) 0deg, rgba(255,255,255,0.06) 40deg, rgba(255,255,255,0) 80deg, rgba(255,255,255,0.03) 200deg, rgba(255,255,255,0) 360deg)",
-        }}
-      />
-
-      <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%,-50%)",
-          width: "28%",
-          height: "28%",
-          borderRadius: "50%",
-          background: color,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          gap: 1,
+            "radial-gradient(circle at 50%, #1a1a1a 0%, #0a0a0a 30%, #111 50%, #0a0a0a 70%, #050505 100%)",
         }}
       >
-        <span
-          style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: size * 0.055,
-            color: "#fff",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            lineHeight: 1,
-          }}
-        >
-          {label}
-        </span>
+        {/* Groove rings */}
+        {[0.92, 0.84, 0.76, 0.68, 0.6, 0.52].map((r) => (
+          <div
+            key={r}
+            className="absolute rounded-full border border-white/[0.03]"
+            style={{
+              top: `${(1 - r) * 50}%`,
+              left: `${(1 - r) * 50}%`,
+              width: `${r * 100}%`,
+              height: `${r * 100}%`,
+            }}
+          />
+        ))}
+        {/* Sheen highlight */}
         <div
+          className="absolute inset-0 rounded-full"
           style={{
-            width: size * 0.04,
-            height: size * 0.04,
-            borderRadius: "50%",
-            background: "#0a0a0a",
+            background:
+              "conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.04) 60deg, transparent 120deg, rgba(255,255,255,0.02) 240deg, transparent 360deg)",
           }}
         />
-      </div>
-    </motion.div>
+        {/* Red label - 29% of disc */}
+        <div
+          className="absolute bg-[#D20000] rounded-full"
+          style={{
+            width: "29%",
+            height: "29%",
+            top: "35.5%",
+            left: "35.5%",
+          }}
+        />
+        {/* Center hole - 13% of disc */}
+        <div
+          className="absolute bg-[#0a0a0a] rounded-full"
+          style={{
+            width: "13%",
+            height: "13%",
+            top: "43.5%",
+            left: "43.5%",
+          }}
+        />
+      </motion.div>
+    </div>
   )
 }
 
-function ReviewRow({
-  article,
-  index,
-  onOpen,
-}: {
-  article: HomepageArticle
-  index: number
-  onOpen: (id: string) => void
-}) {
-  const [hovered, setHovered] = useState(false)
-  const [playing, setPlaying] = useState(false)
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: "-60px" })
-
-  return (
+/* ------------------------------------------------------------------ */
+/*  Article Card (grid)                                                */
+/* ------------------------------------------------------------------ */
+function ArticleCard({ article }: { article: HomepageArticle }) {
+  const inner = (
     <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{
-        duration: 0.55,
-        delay: index * 0.07,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      onClick={() => onOpen(article.id)}
-      style={{
-        display: "grid",
-        gridTemplateColumns: "52px 96px 1fr auto auto",
-        alignItems: "center",
-        gap: "0 24px",
-        padding: "20px 0",
-        borderBottom: "1px solid #e2e2e2",
-        cursor: "pointer",
-        position: "relative",
-        overflow: "hidden",
-      }}
+      whileHover={{ y: -8 }}
+      className="flex flex-col group bg-white cursor-pointer border border-neutral-100 rounded-[20px] overflow-hidden shadow-sm hover:shadow-lg transition-shadow"
     >
-      <motion.div
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: hovered ? 1 : 0 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: article.accentColor,
-          transformOrigin: "left",
-          zIndex: 0,
-          opacity: 0.04,
-        }}
-      />
-
-      <span
-        style={{
-          fontFamily: "'DM Mono', monospace",
-          fontSize: "0.62rem",
-          color: hovered ? article.accentColor : "#bbb",
-          letterSpacing: "0.1em",
-          zIndex: 1,
-          transition: "color 0.2s",
-          textAlign: "right",
-          paddingRight: 4,
-        }}
-      >
-        {String(index + 1).padStart(2, "0")}
-      </span>
-
-      <div
-        style={{
-          position: "relative",
-          width: 96,
-          height: 64,
-          zIndex: 1,
-          flexShrink: 0,
-        }}
-      >
-        <motion.img
-          src={article.coverImage ?? FALLBACK_COVER}
-          alt={article.title}
-          animate={{ x: hovered ? -8 : 0 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            position: "absolute",
-            left: 0,
-            top: "50%",
-            transform: "translateY(-50%)",
-            width: 64,
-            height: 64,
-            objectFit: "cover",
-            boxShadow: "3px 3px 0 #0a0a0a",
-            zIndex: 2,
-            background: "#f4f4f4",
-          }}
-        />
-
-        <motion.div
-          animate={{ x: hovered ? 10 : 0, opacity: hovered ? 1 : 0.6 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            position: "absolute",
-            left: 26,
-            top: "50%",
-            transform: "translateY(-50%)",
-            zIndex: 1,
-          }}
-          onClick={(event) => {
-            event.stopPropagation()
-            setPlaying((value) => !value)
-          }}
-        >
-          <VinylDisc
-            color={article.labelColor}
-            label={article.vinylLabel}
-            spinning={playing}
-            size={64}
+      <div className="relative w-full aspect-[4/3] overflow-hidden bg-neutral-200">
+        {article.coverImage ? (
+          <Image
+            src={article.coverImage}
+            alt={article.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
-        </motion.div>
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300" />
+        )}
       </div>
-
-      <div style={{ zIndex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            gap: 10,
-            marginBottom: 3,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: "1.15rem",
-              fontStyle: "italic",
-              fontWeight: 700,
-              color: hovered ? article.accentColor : "#0a0a0a",
-              transition: "color 0.2s",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {article.title}
-          </span>
-          <span
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: "0.8rem",
-              color: "#777",
-              fontWeight: 300,
-              flexShrink: 0,
-            }}
-          >
-            {article.artist}
-          </span>
-        </div>
-        <p
-          style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: "0.72rem",
-            color: "#999",
-            lineHeight: 1.45,
-            margin: 0,
-            display: "-webkit-box",
-            WebkitLineClamp: 1,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
+      <div className="p-6">
+        <h3 className="text-xl font-bold leading-snug mb-2 group-hover:text-[#D20000] transition-colors line-clamp-2">
+          {article.title}
+        </h3>
+        <p className="text-sm text-neutral-500 mb-4 line-clamp-3 leading-relaxed">
           {article.summary}
         </p>
-      </div>
-
-      <div style={{ zIndex: 1, textAlign: "right", flexShrink: 0 }}>
-        <div
-          style={{
-            display: "inline-block",
-            fontFamily: "'Playfair Display', serif",
-            fontStyle: "italic",
-            fontSize: "0.8rem",
-            fontWeight: 700,
-            color: article.accentColor,
-            borderBottom: `2px solid ${article.accentColor}`,
-            paddingBottom: 1,
-            marginBottom: 4,
-          }}
-        >
-          {article.ratingLabel ?? article.typeLabel}
-        </div>
-        <div
-          style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: "0.55rem",
-            color: "#bbb",
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-          }}
-        >
-          {article.year} / {article.genre}
-        </div>
-      </div>
-
-      <div
-        style={{ zIndex: 1, textAlign: "right", flexShrink: 0, minWidth: 110 }}
-      >
-        <div
-          style={{
-            display: "inline-block",
-            fontFamily: "'DM Mono', monospace",
-            fontSize: "0.52rem",
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: "#fff",
-            background: article.accentColor,
-            padding: "3px 8px",
-            marginBottom: 5,
-          }}
-        >
-          {article.typeLabel}
-        </div>
-        <div
-          style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: "0.62rem",
-            color: "#aaa",
-          }}
-        >
-          {article.reviewer}
-        </div>
+        <p className="text-sm italic text-neutral-400">
+          by {article.reviewer}
+        </p>
       </div>
     </motion.div>
   )
+
+  if (article.slug) {
+    return <Link href={article.href}>{inner}</Link>
+  }
+  return inner
 }
 
-function ReviewModal({
-  article,
-  onClose,
-}: {
-  article: HomepageArticle
-  onClose: () => void
-}) {
-  const [spinning, setSpinning] = useState(false)
-  const router = useRouter()
+/* ------------------------------------------------------------------ */
+/*  Wide Feature Card (horizontal)                                     */
+/* ------------------------------------------------------------------ */
+function WideFeatureCard({ article }: { article: HomepageArticle }) {
+  const inner = (
+    <motion.div
+      whileHover={{ y: -4 }}
+      className="group grid grid-cols-1 md:grid-cols-2 bg-white border border-neutral-100 rounded-[20px] overflow-hidden shadow-sm hover:shadow-lg transition-shadow cursor-pointer"
+    >
+      <div className="relative aspect-[4/3] md:aspect-auto overflow-hidden bg-neutral-200">
+        {article.coverImage ? (
+          <Image
+            src={article.coverImage}
+            alt={article.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300" />
+        )}
+      </div>
+      <div className="p-8 flex flex-col justify-center">
+        <span className="text-xs font-mono tracking-widest uppercase text-[#D20000] mb-3">
+          Featured
+        </span>
+        <h3 className="text-2xl font-bold leading-snug mb-3 group-hover:text-[#D20000] transition-colors">
+          {article.title}
+        </h3>
+        <p className="text-sm text-neutral-500 mb-4 leading-relaxed line-clamp-4">
+          {article.summary}
+        </p>
+        <p className="text-sm italic text-neutral-400">
+          by {article.reviewer}
+        </p>
+      </div>
+    </motion.div>
+  )
 
-  useEffect(() => {
-    const handler = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose()
-      }
-    }
+  if (article.slug) {
+    return <Link href={article.href}>{inner}</Link>
+  }
+  return inner
+}
 
-    window.addEventListener("keydown", handler)
-    return () => window.removeEventListener("keydown", handler)
-  }, [onClose])
+/* ------------------------------------------------------------------ */
+/*  Auto-scrolling carousel for hero section                           */
+/* ------------------------------------------------------------------ */
+function AutoScrollCarousel({ articles }: { articles: HomepageArticle[] }) {
+  const labels = ["Deep Dive", "Narratives", "Hot Topics", "Opinions", "Deep Dive", "Narratives"]
 
-  useEffect(() => {
-    router.prefetch(article.href)
-  }, [article.href, router])
+  // Duplicate the items so the scroll can loop seamlessly
+  const items = [...articles, ...articles]
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(10,10,10,0.7)",
-        backdropFilter: "blur(6px)",
-        zIndex: 100,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-      }}
-    >
+    <div className="relative w-full overflow-hidden">
       <motion.div
-        initial={{ opacity: 0, y: 48, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 32, scale: 0.97 }}
-        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        onClick={(event) => event.stopPropagation()}
-        style={{
-          background: "#fff",
-          maxWidth: 780,
-          width: "100%",
-          maxHeight: "88vh",
-          overflowY: "auto",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          position: "relative",
+        className="flex gap-6"
+        animate={{ x: [0, -(articles.length * 260)] }}
+        transition={{
+          x: {
+            repeat: Infinity,
+            repeatType: "loop",
+            duration: articles.length * 6,
+            ease: "linear",
+          },
         }}
       >
-        <div
-          style={{
-            background: "#f4f4f4",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 48,
-            gap: 28,
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              width: 320,
-              height: 320,
-              borderRadius: "50%",
-              background: article.accentColor,
-              opacity: 0.06,
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%,-50%)",
-            }}
-          />
-
-          <div style={{ position: "relative", width: 200, height: 200 }}>
-            <div
-              style={{
-                position: "absolute",
-                left: 80,
-                top: 0,
-                zIndex: 1,
-                cursor: "pointer",
-              }}
-              onClick={() => setSpinning((value) => !value)}
-            >
-              <VinylDisc
-                color={article.labelColor}
-                label={article.vinylLabel}
-                spinning={spinning}
-                size={200}
-              />
-            </div>
-            <motion.img
-              src={article.coverImage ?? FALLBACK_COVER}
-              alt={article.title}
-              initial={{ x: 0 }}
-              animate={{ x: spinning ? -20 : 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                width: 170,
-                height: 170,
-                objectFit: "cover",
-                boxShadow: "6px 6px 0 #0a0a0a",
-                zIndex: 2,
-                background: "#fff",
-              }}
-            />
-          </div>
-          <div className="absolute left-[707px] top-[422px] w-[647px] h-0 border-t-[5px] border-black" />
-
-          <button
-            onClick={() => setSpinning((value) => !value)}
-            style={{
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "0.62rem",
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              background: spinning ? article.accentColor : "transparent",
-              color: spinning ? "#fff" : article.accentColor,
-              border: `1.5px solid ${article.accentColor}`,
-              padding: "8px 20px",
-              cursor: "pointer",
-              zIndex: 3,
-              transition: "all 0.2s",
-            }}
-          >
-            {spinning ? "stop spinning" : "spin the record"}
-          </button>
-        </div>
-
-        <div
-          style={{
-            padding: "40px 36px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <button
-            onClick={onClose}
-            style={{
-              alignSelf: "flex-end",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "0.62rem",
-              letterSpacing: "0.18em",
-              color: "#bbb",
-              textTransform: "uppercase",
-              marginBottom: 16,
-            }}
-          >
-            close
-          </button>
-
-          <span
-            style={{
-              display: "inline-block",
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "0.58rem",
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              color: "#fff",
-              background: article.accentColor,
-              padding: "3px 9px",
-              alignSelf: "flex-start",
-              marginBottom: 14,
-            }}
-          >
-            {article.typeLabel}
-          </span>
-
-          <h2
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontStyle: "italic",
-              fontSize: "2rem",
-              fontWeight: 700,
-              color: article.accentColor,
-              lineHeight: 1.1,
-              marginBottom: 6,
-            }}
-          >
-            {article.title}
-          </h2>
-
-          <p
-            style={{
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "0.7rem",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "#555",
-              marginBottom: 4,
-            }}
-          >
-            {article.artist}
-          </p>
-          <p
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: "0.7rem",
-              color: "#aaa",
-              marginBottom: 20,
-            }}
-          >
-            {article.year} / {article.genre}
-          </p>
-
-            <div className="flex flex-col items-center">
-              <div className="w-[315px] h-[51px] bg-[#D20000] rounded-full flex items-center justify-center mb-[24px]">
-                <span className="text-white text-[32px] font-semibold">Narratives</span>
+        {items.map((article, i) => {
+          const card = (
+            <div className={`flex-shrink-0 ${article.slug ? "cursor-pointer" : ""}`} style={{ width: 240 }}>
+              {/* Category pill */}
+              <div className="flex justify-center mb-4">
+                <div className="h-[40px] px-8 bg-[#D20000] rounded-full flex items-center justify-center">
+                  <span className="text-white text-lg font-semibold">
+                    {labels[i % labels.length]}
+                  </span>
+                </div>
               </div>
-              <div className="w-[315px] h-[315px] bg-neutral-200 rounded-[30px] mb-[75px]" />
-              <div className="text-center w-[312px]">
-                <p className="text-[32px] font-bold leading-tight">ARTICLE TITLE?<br/></p>
-                <p className="text-[20px] font-normal italic text-neutral-800">author</p>
+              {/* Cover image */}
+              <div className="w-[240px] h-[240px] rounded-[20px] overflow-hidden bg-neutral-200 relative mb-4">
+                {article.coverImage ? (
+                  <Image
+                    src={article.coverImage}
+                    alt={article.title}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300" />
+                )}
+              </div>
+              {/* Title + author */}
+              <div className="text-center">
+                <p className="text-lg font-bold leading-tight mb-1">{article.title}</p>
+                <p className="text-sm italic text-neutral-500">{article.reviewer}</p>
               </div>
             </div>
+          )
 
-          <div style={{ marginBottom: 20 }}>
-            <span
-              style={{
-                fontFamily: "'Playfair Display', serif",
-                fontStyle: "italic",
-                fontSize: "1.4rem",
-                fontWeight: 700,
-                color: article.accentColor,
-                borderBottom: `2px solid ${article.accentColor}`,
-                paddingBottom: 2,
-              }}
-            >
-              {article.ratingLabel ?? article.typeLabel}
-            </span>
-          </div>
-
-          <div
-            style={{
-              height: 1,
-              background: "#e8e8e8",
-              marginBottom: 16,
-            }}
-          />
-
-          <p
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: "0.85rem",
-              lineHeight: 1.75,
-              color: "#333",
-              fontWeight: 300,
-              flex: 1,
-            }}
-          >
-            {article.summary}
-          </p>
-
-          <p
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: "0.72rem",
-              color: "#aaa",
-              marginTop: 20,
-              marginBottom: 20,
-            }}
-          >
-            Reviewed by{" "}
-            <strong style={{ color: "#555", fontWeight: 500 }}>
-              {article.reviewer}
-            </strong>
-          </p>
-
-          <Link
-            href={article.href}
-            style={{
-              alignSelf: "flex-start",
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "0.62rem",
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: "#fff",
-              background: article.accentColor,
-              padding: "10px 16px",
-              textDecoration: "none",
-            }}
-          >
-            Read full piece
-          </Link>
-        </div>
+          return article.slug ? (
+            <Link key={`${article.id}-${i}`} href={article.href}>
+              {card}
+            </Link>
+          ) : (
+            <div key={`${article.id}-${i}`}>{card}</div>
+          )
+        })}
       </motion.div>
-    </motion.div>
+    </div>
   )
 }
 
+/* ------------------------------------------------------------------ */
+/*  Dark Section Text Block                                            */
+/* ------------------------------------------------------------------ */
+function DarkSectionArticle({ article }: { article: HomepageArticle }) {
+  const inner = (
+    <div className="text-center max-w-[380px]">
+      <h4 className="text-white text-2xl md:text-3xl font-bold mb-3 uppercase">
+        {article.title}
+      </h4>
+      <p className="text-white/70 text-base md:text-lg leading-relaxed">
+        {article.summary}
+      </p>
+    </div>
+  )
+
+  if (article.slug) {
+    return (
+      <Link href={article.href} className="hover:opacity-80 transition-opacity">
+        {inner}
+      </Link>
+    )
+  }
+  return inner
+}
+
+/* ------------------------------------------------------------------ */
+/*  Featured Center Article (dark section)                             */
+/* ------------------------------------------------------------------ */
+function FeaturedCenterArticle({ article }: { article: HomepageArticle }) {
+  const inner = (
+    <div className="flex flex-col items-center">
+      <div className="w-full max-w-[372px] aspect-square rounded-[30px] overflow-hidden mb-8 bg-neutral-700 shadow-xl relative">
+        {article.coverImage ? (
+          <Image
+            src={article.coverImage}
+            alt={article.title}
+            fill
+            className="object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-neutral-700" />
+        )}
+      </div>
+      <div className="h-[51px] px-10 bg-[#D20000] rounded-[30px] flex items-center justify-center mb-6">
+        <span className="text-white text-2xl font-normal">Deep Dive</span>
+      </div>
+      <h2 className="text-white text-3xl md:text-4xl font-bold mb-3 text-center">
+        {article.title}
+      </h2>
+      <p className="text-white/70 text-lg text-center leading-relaxed max-w-md">
+        {article.summary}
+      </p>
+    </div>
+  )
+
+  if (article.slug) {
+    return (
+      <Link href={article.href} className="hover:opacity-90 transition-opacity">
+        {inner}
+      </Link>
+    )
+  }
+  return inner
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main Homepage                                                      */
+/* ------------------------------------------------------------------ */
 export default function HomePage() {
   const [articles, setArticles] = useState<HomepageArticle[]>([])
-  const [openId, setOpenId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const headerRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
 
     async function loadArticles() {
       try {
-        setIsLoading(true)
         const response = await fetch("/api/homepage-articles")
         const payload = (await response.json()) as HomepageArticlesResponse & {
           message?: string
         }
 
         if (!response.ok) {
-          throw new Error(payload.message ?? "Failed to load homepage articles")
+          throw new Error(payload.message ?? "Failed to load articles")
         }
 
         if (!cancelled) {
           setArticles(payload.articles)
-          setLoadError(null)
         }
-      } catch (error) {
-        if (!cancelled) {
-          setLoadError(
-            error instanceof Error ? error.message : "Failed to load homepage articles",
-          )
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
+      } catch {
+        // Silently fall through to mock data
       }
     }
 
     void loadArticles()
-
     return () => {
       cancelled = true
     }
   }, [])
 
-  const openArticle =
-    openId !== null ? articles.find((article) => article.id === openId) ?? null : null
-
-  const stats = useMemo(
-    () => [
-      {
-        label: "Pieces live",
-        value: formatCount(articles.length, isLoading),
-      },
-      {
-        label: "Album rates",
-        value: formatCount(
-          articles.filter((article) => article.typeLabel === "Album Rate").length,
-          isLoading,
-        ),
-      },
-      {
-        label: "Album reviews",
-        value: formatCount(
-          articles.filter((article) => article.typeLabel === "Album Review").length,
-          isLoading,
-        ),
-      },
-    ],
-    [articles, isLoading],
-  )
+  const {
+    heroArticles,
+    featuredCenter,
+    featuredSides,
+    wideFeatures,
+    gridArticles,
+  } = useMemo(() => {
+    const hero = fillSlots(articles.slice(0, 6), 6)
+    const center = fillSlots(articles.slice(6, 7), 1)
+    const sides = fillSlots(articles.slice(7, 13), 6)
+    const wide = fillSlots(articles.slice(13, 15), 2)
+    const grid = fillSlots(articles.slice(15, 27), 12)
+    return {
+      heroArticles: hero,
+      featuredCenter: center[0],
+      featuredSides: sides,
+      wideFeatures: wide,
+      gridArticles: grid,
+    }
+  }, [articles])
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #fff; font-family: 'DM Sans', sans-serif; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #ddd; }
-      `}</style>
-
-      <motion.div
-        ref={headerRef}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        style={{
-          padding: "56px 48px 40px",
-          borderBottom: "1.5px solid #0a0a0a",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            top: -10,
-            right: 48,
-            fontFamily: "'Playfair Display', serif",
-            fontSize: "clamp(80px, 14vw, 180px)",
-            fontWeight: 700,
-            fontStyle: "italic",
-            color: "transparent",
-            WebkitTextStroke: "1px #f0f0f0",
-            lineHeight: 1,
-            userSelect: "none",
-            pointerEvents: "none",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Reviews
+    <div className="w-full bg-white relative overflow-x-hidden min-h-screen">
+      {/* ============================================================ */}
+      {/* HERO: Record player left, Latest From + scrolling cards right  */}
+      {/* ============================================================ */}
+      <section className="relative w-full flex" style={{ minHeight: 520 }}>
+        {/* Left: Record player */}
+        <div className="relative flex-shrink-0" style={{ width: "38%" }}>
+          <div className="absolute" style={{ left: 20, top: 30 }}>
+            <SpinningVinyl size={400} />
+          </div>
+          <div
+            className="absolute z-10"
+            style={{
+              left: 320,
+              top: 0,
+              width: 100,
+              height: 280,
+              transform: "rotate(30deg)",
+              transformOrigin: "50% 5%",
+            }}
+          >
+            <Image
+              src={turntableArm}
+              alt=""
+              width={100}
+              height={280}
+              className="object-contain"
+              priority
+            />
+          </div>
         </div>
 
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-            style={{
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "0.62rem",
-              letterSpacing: "0.25em",
-              textTransform: "uppercase",
-              color: "#bbb",
-              marginBottom: 14,
-            }}
-          >
-            Brown Music Review / Home
-          </motion.p>
-
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              delay: 0.18,
-              duration: 0.6,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: "clamp(2rem, 4vw, 3.4rem)",
-              fontWeight: 700,
-              lineHeight: 1.05,
-              color: "#0a0a0a",
-              maxWidth: 640,
-            }}
-          >
-            What we&apos;ve been
-            <br />
-            <em style={{ color: "#555" }}>listening to.</em>
-          </motion.h2>
-
-          <motion.div
-            initial={{ opacity: 0, scaleX: 0 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            transition={{
-              delay: 0.35,
-              duration: 0.6,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            style={{
-              display: "flex",
-              gap: 32,
-              marginTop: 28,
-              paddingTop: 20,
-              borderTop: "1px solid #e8e8e8",
-              transformOrigin: "left",
-              flexWrap: "wrap",
-            }}
-          >
-            {stats.map((stat) => (
-              <div key={stat.label}>
-                <div
-                  style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontStyle: "italic",
-                    fontSize: "1.4rem",
-                    fontWeight: 700,
-                    color: "#0a0a0a",
-                    lineHeight: 1,
-                    marginBottom: 4,
-                  }}
-                >
-                  {stat.value}
-                </div>
-                <div
-                  style={{
-                    fontFamily: "'DM Mono', monospace",
-                    fontSize: "0.55rem",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    color: "#bbb",
-                  }}
-                >
-                  {stat.label}
-                </div>
-                <h2 className="text-white text-[45px] font-bold mb-4">title</h2>
-                <p className="text-white/80 text-[28px] font-medium text-center leading-normal">
-                  short description short description short description short description short description short description
-                </p>
-              </div>
-            </div>
+        {/* Right: Latest From + auto-scrolling article carousel */}
+        <div className="flex-1 flex flex-col pt-6 pr-0 overflow-hidden">
+          {/* Latest From heading */}
+          <div className="pr-12 mb-8">
+            <h2 className="text-[clamp(48px,6vw,90px)] font-medium text-[#D20000] leading-none mb-3 text-right">
+              Latest From
+            </h2>
+            <div className="border-t-[5px] border-black w-full" />
           </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "52px 96px 1fr auto auto",
-          gap: "0 24px",
-          padding: "10px 48px",
-          borderBottom: "1px solid #e8e8e8",
-          background: "#fafafa",
-        }}
-      >
-        {["#", "", "Title / Writer", "Rating", "Type"].map((heading, index) => (
-          <span
-            key={heading}
-            style={{
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "0.52rem",
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              color: "#ccc",
-              textAlign: index === 3 ? "right" : index === 4 ? "right" : undefined,
-            }}
-          >
-            {heading}
-          </span>
-        ))}
-      </div>
-
-      <div style={{ padding: "0 48px 80px" }}>
-        {isLoading && (
-          <div
-            style={{
-              padding: "32px 0",
-              borderBottom: "1px solid #e2e2e2",
-              color: "#888",
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "0.75rem",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-            }}
-          >
-            Loading latest Cosmic entries...
+          {/* Auto-scrolling carousel */}
+          <div className="relative flex-1 overflow-hidden">
+            <AutoScrollCarousel articles={heroArticles} />
           </div>
-        )}
+        </div>
+      </section>
 
-        {!isLoading && loadError && (
-          <div
-            style={{
-              padding: "32px 0",
-              borderBottom: "1px solid #e2e2e2",
-              color: "#8b1a00",
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: "0.9rem",
-              lineHeight: 1.5,
-            }}
-          >
-            {loadError}
+      {/* ============================================================ */}
+      {/* SECTION C: Dark Featured Section                              */}
+      {/* ============================================================ */}
+      <section className="w-full bg-black py-16 px-8 md:px-16">
+        <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
+          <div className="flex flex-col gap-12 items-center">
+            {featuredSides.slice(0, 3).map((a) => (
+              <DarkSectionArticle key={a.id} article={a} />
+            ))}
           </div>
-        )}
-
-        {!isLoading && !loadError && articles.length === 0 && (
-          <div
-            style={{
-              padding: "32px 0",
-              borderBottom: "1px solid #e2e2e2",
-              color: "#666",
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: "0.9rem",
-              lineHeight: 1.5,
-            }}
-          >
-            No published Cosmic articles are available yet.
+          <FeaturedCenterArticle article={featuredCenter} />
+          <div className="flex flex-col gap-12 items-center">
+            {featuredSides.slice(3, 6).map((a) => (
+              <DarkSectionArticle key={a.id} article={a} />
+            ))}
           </div>
-        )}
+        </div>
+      </section>
 
-        {!isLoading &&
-          !loadError &&
-          articles.map((article, index) => (
-            <ReviewRow
-              key={article.id}
-              article={article}
-              index={index}
-              onOpen={setOpenId}
-            />
+      {/* ============================================================ */}
+      {/* SECTION D: Wide Feature Cards                                 */}
+      {/* ============================================================ */}
+      <section className="w-full px-8 md:px-16 py-16">
+        <div className="max-w-[1400px] mx-auto flex flex-col gap-8">
+          {wideFeatures.map((article) => (
+            <WideFeatureCard key={article.id} article={article} />
           ))}
-      </div>
+        </div>
+      </section>
 
+      {/* ============================================================ */}
+      {/* SECTION E: Article Card Grid                                  */}
+      {/* ============================================================ */}
+      <section className="w-full px-8 md:px-16 pb-16">
+        <div className="max-w-[1400px] mx-auto">
+          <h2 className="text-3xl font-bold mb-8">More From BMR</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {gridArticles.map((article) => (
+              <ArticleCard key={article.id} article={article} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================ */}
+      {/* SECTION F: See All                                            */}
+      {/* ============================================================ */}
+      <section className="w-full text-center pb-16">
+        <Link
+          href="/reviews"
+          className="text-4xl font-bold hover:text-[#D20000] transition-colors"
+        >
+          see all
+        </Link>
+      </section>
+
+      {/* ============================================================ */}
+      {/* SECTION G: Email Signup                                       */}
+      {/* ============================================================ */}
       <EmailSignup />
-
-      <footer
-        style={{
-          borderTop: "1.5px solid #0a0a0a",
-          padding: "24px 48px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: "0.9rem",
-            fontWeight: 700,
-            fontStyle: "italic",
-            color: "#0a0a0a",
-            letterSpacing: "0.08em",
-          }}
-        >
-          brown music review
-        </span>
-        <span
-          style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: "0.55rem",
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            color: "#ccc",
-          }}
-        >
-          Bryan Chung @ MIT &apos;29 / Jennifer Park @ Tufts &apos;29
-        </span>
-      </footer>
-
-      <AnimatePresence>
-        {openArticle && (
-          <ReviewModal article={openArticle} onClose={() => setOpenId(null)} />
-        )}
-      </AnimatePresence>
-    </>
+    </div>
   )
 }

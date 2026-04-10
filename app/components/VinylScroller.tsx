@@ -34,30 +34,29 @@ export default function VinylScroller() {
     }
   };
 
-  const handleMove = (clientX: number, clientY: number) => {
-    if (!isDragging || !vinylRef.current) return;
-
-    const rect = vinylRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
-    
-    let deltaAngle = angle - lastAngleRef.current;
-    if (deltaAngle > 180) deltaAngle -= 360;
-    if (deltaAngle < -180) deltaAngle += 360;
-    
-    lastAngleRef.current = angle;
-    
-    // Scroll based on rotation
-    const scrollDelta = deltaAngle * 5;
-    window.scrollBy(0, scrollDelta);
-  };
-
-  const handleEnd = () => {
-    setIsDragging(false);
-  };
-
   useEffect(() => {
+    const handleMove = (clientX: number, clientY: number) => {
+      if (!vinylRef.current) return;
+
+      const rect = vinylRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+
+      let deltaAngle = angle - lastAngleRef.current;
+      if (deltaAngle > 180) deltaAngle -= 360;
+      if (deltaAngle < -180) deltaAngle += 360;
+
+      lastAngleRef.current = angle;
+
+      const scrollDelta = deltaAngle * 5;
+      window.scrollBy(0, scrollDelta);
+    };
+
+    const handleEnd = () => {
+      setIsDragging(false);
+    };
+
     const handleMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length > 0) {
