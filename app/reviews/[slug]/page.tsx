@@ -1,6 +1,6 @@
 import {
   getArticleBySlug,
-  getArticleCoverImage,
+  getArticleCoverImageUrl,
   getArticlePublishedDateDisplay,
   getArticleTypeLabel,
   getArticleWriter,
@@ -17,11 +17,10 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
     notFound()
   }
 
-  const coverImage = getArticleCoverImage(article)
   const writer = getArticleWriter(article)
   const articleTypeLabel = getArticleTypeLabel(article)
   const publishedDate = getArticlePublishedDateDisplay(article)
-  const imageSrc = coverImage?.imgix_url ?? coverImage?.url
+  const imageSrc = getArticleCoverImageUrl(article)
 
   return (
     <div>

@@ -50,8 +50,8 @@ interface CosmicObjectBase<TType extends string, TMetadata> {
 /** * These type literals match the "type" field in your JSON response.
  * Note: 'albumreview' is singular in the API even if the folder is 'AlbumReviews'.
  */
-export type AlbumRate = CosmicObjectBase<"albumrate", AlbumRateMetadata>
-export type AlbumReview = CosmicObjectBase<"albumreview", AlbumReviewMetadata>
+export type AlbumRate = CosmicObjectBase<string, AlbumRateMetadata>
+export type AlbumReview = CosmicObjectBase<string, AlbumReviewMetadata>
 
 export interface HomepageArticle {
   id: string
