@@ -1,4 +1,5 @@
 import {
+  decodeHtmlEntities,
   getArticleBodyContent,
   getArticleBodyFormat,
   type CosmicArticle,
@@ -8,6 +9,7 @@ import type {
   HTMLAttributes,
 } from "react"
 import ReactMarkdown from "react-markdown"
+import rehypeRaw from "rehype-raw"
 import remarkGfm from "remark-gfm"
 
 type ArticleBodyProps = {
@@ -21,11 +23,17 @@ export default function ArticleBody({ article }: ArticleBodyProps) {
     return null
   }
 
+  // Markdown stored in the CMS sometimes contains literal HTML entities
+  // (e.g. "&rsquo;") and double-encoded HTML tags (e.g. "&lt;sup&gt;"). The
+  // browser only decodes entities inside dangerouslySetInnerHTML, so we have
+  // to decode manually for the markdown path.
+  const decodedBody = decodeHtmlEntities(body)
+
   if (getArticleBodyFormat(article) === "html") {
     return (
       <div
         className="text-base leading-relaxed text-gray-800 [&_a]:text-red-700 [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_li]:mb-2 [&_ol]:mb-4 [&_p]:mb-4 [&_ul]:mb-4"
-        dangerouslySetInnerHTML={{ __html: body }}
+        dangerouslySetInnerHTML={{ __html: decodedBody }}
       />
     )
   }
@@ -34,6 +42,7 @@ export default function ArticleBody({ article }: ArticleBodyProps) {
     <div className="text-base leading-relaxed text-gray-800">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
         components={{
           p: (props: HTMLAttributes<HTMLParagraphElement>) => (
             <p className="mb-4" {...props} />
@@ -69,7 +78,7 @@ export default function ArticleBody({ article }: ArticleBodyProps) {
           ),
         }}
       >
-        {body}
+        {decodedBody}
       </ReactMarkdown>
     </div>
   )

@@ -83,28 +83,9 @@ const REVIEW_STYLE: AccentStyle = {
   vinylLabel: "BMR",
 }
 
-// Fallback cover images for articles missing covers in Cosmic.
-// Sourced from Wikimedia Commons (Creative Commons licensed).
-const FALLBACK_COVERS: Record<string, string> = {
-  "jim-legxacy-the-new-david-bowie":
-    "https://upload.wikimedia.org/wikipedia/commons/6/68/David_Bowie_1974.JPG",
-  "bmrs-music-of-2025":
-    "https://upload.wikimedia.org/wikipedia/commons/d/da/Audience_at_the_Main_Stage_concert_at_night_-_Pol%27and%27Rock_Festival_2019._photo_by_%C5%81ukasz_Widziszowski_03.jpg",
-  "an-ode-to-a-place":
-    "https://upload.wikimedia.org/wikipedia/commons/b/b2/2014-365-37_In_the_Groove_%2812358036875%29.jpg",
-  "what-was-that":
-    "https://upload.wikimedia.org/wikipedia/commons/3/30/Lorde_Glasto2025-9_%28cropped%29.jpg",
-  "spring-weekend-listicle":
-    "https://upload.wikimedia.org/wikipedia/commons/3/32/Pulitzer2018-portraits-kendrick-lamar.jpg",
-  "everything-in-its-right-place-and-time-radiohead-before-and-after-2000":
-    "https://upload.wikimedia.org/wikipedia/commons/0/08/Thom_Yorke.jpg",
-  "virgin-review":
-    "https://upload.wikimedia.org/wikipedia/commons/3/30/Lorde_Glasto2025-9_%28cropped%29.jpg",
-  "listening-back-to-pieces-of-a-man":
-    "https://upload.wikimedia.org/wikipedia/commons/1/14/Gil_Scott-Heron.jpg",
-  "mayhem":
-    "https://upload.wikimedia.org/wikipedia/commons/9/98/Lady_Gaga_at_the_White_House_in_2023_%281%29.jpg",
-}
+// Used when an article has no cover image set in Cosmic. Lives in /public.
+// The space in the filename is URL-encoded so Next.js Image accepts it.
+const FALLBACK_COVER_URL = "/BMR%20STICKER.png"
 
 // Category assignments for articles. Maps slug → page category so each
 // subpage shows different content. Articles not listed here appear on all pages.
@@ -274,13 +255,81 @@ function stripHtml(value: string): string {
   return value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
 }
 
+const NAMED_HTML_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  rsquo: "’",
+  lsquo: "‘",
+  rdquo: "”",
+  ldquo: "“",
+  sbquo: "‚",
+  bdquo: "„",
+  mdash: "—",
+  ndash: "–",
+  hellip: "…",
+  bull: "•",
+  middot: "·",
+  copy: "©",
+  reg: "®",
+  trade: "™",
+  laquo: "«",
+  raquo: "»",
+  deg: "°",
+  prime: "′",
+  Prime: "″",
+}
+
+function decodeHtmlEntitiesOnce(value: string): string {
+  return value.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-zA-Z][a-zA-Z0-9]*);/g, (match, entity: string) => {
+    if (entity[0] === "#") {
+      const codePoint =
+        entity[1] === "x" || entity[1] === "X"
+          ? parseInt(entity.slice(2), 16)
+          : parseInt(entity.slice(1), 10)
+      if (Number.isFinite(codePoint) && codePoint > 0 && codePoint <= 0x10ffff) {
+        try {
+          return String.fromCodePoint(codePoint)
+        } catch {
+          return match
+        }
+      }
+      return match
+    }
+    return NAMED_HTML_ENTITIES[entity] ?? match
+  })
+}
+
+// CMS content is sometimes double- or triple-encoded (e.g. "&amp;rsquo;" must
+// decode to "'" via two passes). Loop until the string stops changing, with a
+// safety cap so we can't spin on pathological input.
+export function decodeHtmlEntities(value: string): string {
+  let current = value
+  for (let i = 0; i < 4; i++) {
+    const next = decodeHtmlEntitiesOnce(current)
+    if (next === current) return next
+    current = next
+  }
+  return current
+}
+
+function toPreviewText(value: string): string {
+  // Decode first so encoded tags (e.g. "&lt;sup&gt;") become real tags that
+  // stripHtml can remove, then strip, then decode any entities the strip
+  // exposed. Previews are plain text — no HTML should reach the renderer.
+  const decoded = decodeHtmlEntities(value)
+  const stripped = stripHtml(decoded)
+  return decodeHtmlEntities(stripped).replace(/\s+/g, " ").trim()
+}
+
 function getArticleSummary(article: CosmicArticle): string {
   const metadata = getArticleMetadata(article)
 
   if (metadata.tagline?.trim()) {
-    const raw = metadata.tagline.trim()
-    // Taglines may contain HTML (e.g. <p> tags from the rich-text editor).
-    return looksLikeHtml(raw) ? stripHtml(raw) : raw
+    return toPreviewText(metadata.tagline)
   }
 
   const body = getArticleBodyContent(article)
@@ -288,8 +337,7 @@ function getArticleSummary(article: CosmicArticle): string {
     return ""
   }
 
-  const plainText = getArticleBodyFormat(article) === "html" ? stripHtml(body) : body
-  return plainText.replace(/\s+/g, " ").trim().slice(0, 220)
+  return toPreviewText(body).slice(0, 220)
 }
 
 function getArticlePublishedYear(article: CosmicArticle): string {
@@ -364,9 +412,9 @@ function getArticlePrimaryLine(article: CosmicArticle): string {
   return getArticleWriter(article) ?? "Brown Music Review"
 }
 
-export function getArticleCoverImageUrl(article: CosmicArticle): string | null {
+export function getArticleCoverImageUrl(article: CosmicArticle): string {
   const coverImage = getArticleCoverImage(article)
-  return coverImage?.imgix_url ?? coverImage?.url ?? FALLBACK_COVERS[article.slug] ?? null
+  return coverImage?.imgix_url ?? coverImage?.url ?? FALLBACK_COVER_URL
 }
 
 async function getArticlesByType<T extends CosmicArticle>(
@@ -430,7 +478,7 @@ async function loadHomepageArticles(limit: number): Promise<HomepageArticle[]> {
 
 export const getHomepageArticles = unstable_cache(
   async (limit: number = ARTICLE_LIST_LIMIT) => loadHomepageArticles(limit),
-  ["cosmic-homepage-articles"],
+  ["cosmic-homepage-articles-v3"],
   { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
 )
 
@@ -441,7 +489,7 @@ async function loadAllArticles(limit: number): Promise<HomepageArticle[]> {
 
 export const getAllArticles = unstable_cache(
   async (limit: number = 50) => loadAllArticles(limit),
-  ["cosmic-all-articles"],
+  ["cosmic-all-articles-v3"],
   { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
 )
 
@@ -457,6 +505,6 @@ async function loadArticlesByCategory(
 export const getArticlesByCategory = unstable_cache(
   async (category: ArticleCategory, limit: number = 50) =>
     loadArticlesByCategory(category, limit),
-  ["cosmic-articles-by-category"],
+  ["cosmic-articles-by-category-v3"],
   { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
 )
