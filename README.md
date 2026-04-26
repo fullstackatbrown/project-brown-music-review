@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Brown Music Review
 
-## Getting Started
+The website for [Brown Music Review](https://brownmusicreview.com), built with Next.js (App Router) and powered by [Cosmic CMS](https://www.cosmicjs.com/).
 
-First, run the development server:
+## Quick start
+
+You'll need **Node 20+** and **npm**.
 
 ```bash
+# 1. Clone
+git clone https://github.com/fullstackatbrown/project-brown-music-review.git
+cd project-brown-music-review
+
+# 2. Install dependencies
+npm install
+
+# 3. Configure environment
+cp .env.example .env.local
+# Then open .env.local and fill in real Cosmic credentials.
+# Get them from the BMR Cosmic dashboard (Bucket Settings → API Access)
+# or ask the project owner.
+
+# 4. Run the dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework:** Next.js 16 (App Router) + React 19, styled with Tailwind v4.
+- **CMS:** Articles live in [Cosmic](https://www.cosmicjs.com/) under two object types:
+  - `albumrates` — short-form rated reviews (markdown body)
+  - `albumreview` — long-form features (rich-text/HTML body)
+- **Data layer:** All Cosmic reads go through `lib/cosmic.ts`, wrapped in `unstable_cache` with a shared `cosmic-content` tag. The `/api/revalidate` route (POST with `?secret=COSMIC_WEBHOOK_SECRET`) busts the cache on demand — wire it as a Cosmic webhook for instant publishing updates in production.
+- **Images:** Cover images served from Cosmic's imgix CDN. Articles without a Cosmic-uploaded cover fall back to `public/BMR STICKER.png`.
 
-## Learn More
+## Project layout
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/                  # Next.js App Router pages
+  page.tsx            # Homepage (server component) → HomeClient
+  reviews/[slug]/     # Individual article pages
+  api/                # Route handlers (revalidate webhook, JSON endpoints)
+  components/         # Shared UI used across pages
+components/           # Reusable cross-route components
+lib/
+  cosmic.ts           # All Cosmic SDK reads + content normalization
+  types.ts            # TypeScript types for Cosmic objects
+public/               # Static assets (logos, BMR sticker fallback)
+__tests__/            # Vitest tests
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See `.env.example` for the full list. The minimum to boot the app:
 
-## Deploy on Vercel
+| Variable | Required | Description |
+|---|---|---|
+| `COSMIC_BUCKET_SLUG` | yes | Cosmic bucket identifier |
+| `COSMIC_READ_KEY` | yes | Read key from Cosmic bucket settings |
+| `COSMIC_WEBHOOK_SECRET` | no | Secret used by `/api/revalidate` to authenticate webhooks |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Without the two required vars, the dev server will throw on the first article fetch.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Useful commands
+
+```bash
+npm run dev       # Dev server with hot reload
+npm run build     # Production build
+npm run start     # Run the production build locally
+npm run lint      # ESLint
+npx tsc --noEmit  # TypeScript typecheck
+npx vitest run    # Run tests
+```
+
+## Deploying
+
+Hosted on Vercel. Pushes to `main` trigger a deploy. Set the `COSMIC_*` env vars in the Vercel project settings (Project → Settings → Environment Variables).
