@@ -45,6 +45,14 @@ function FeaturedOpinion({ article }: { article: HomepageArticle }) {
     <motion.div ref={ref} initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ duration: 0.6 }} className="w-full bg-black text-white" style={{ padding: "80px 48px" }}>
       <div className="max-w-[1000px] mx-auto flex flex-col items-center text-center gap-8">
         <span className="text-xs font-mono tracking-widest uppercase text-[var(--accent-opinions)]">Featured</span>
+        {article.coverImage ? (
+          <div
+            className="relative w-[260px] h-[260px] md:w-[320px] md:h-[320px] overflow-hidden shadow-2xl"
+            style={{ border: `2px solid var(--accent-opinions)` }}
+          >
+            <Image src={article.coverImage} alt={article.title} fill className="object-cover" priority sizes="320px" />
+          </div>
+        ) : null}
         <h2 className="text-5xl md:text-6xl leading-tight max-w-3xl font-display tracking-wide">&ldquo;{article.title}&rdquo;</h2>
         <div className="w-16 h-[3px] bg-[var(--accent-opinions)]" />
         <p className="text-lg leading-relaxed text-neutral-300 max-w-2xl">{article.summary}</p>

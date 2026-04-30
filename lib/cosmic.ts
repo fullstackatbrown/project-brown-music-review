@@ -490,6 +490,21 @@ function hasBodyContent(article: CosmicArticle): boolean {
   return !!((metadata.body || "").trim() || (metadata.body_content || "").trim())
 }
 
+function hasCoverImage(article: CosmicArticle): boolean {
+  return getArticleCoverImage(article) !== null
+}
+
+// Articles with a real cover image rank before articles without one;
+// inside each group we keep newest-first. Highlight slots (homepage hero,
+// section featured) consume the top of this list, so visually richer
+// articles show up first. Articles without covers still appear, just
+// further down the page.
+function compareForHighlight(left: CosmicArticle, right: CosmicArticle): number {
+  const coverDiff = Number(hasCoverImage(right)) - Number(hasCoverImage(left))
+  if (coverDiff !== 0) return coverDiff
+  return getArticlePublishedSortValue(right) - getArticlePublishedSortValue(left)
+}
+
 async function loadAllCosmicArticles(limit: number): Promise<CosmicArticle[]> {
   const [albumRates, albumReviews] = await Promise.all([
     getArticlesByType<AlbumRate>(ALBUM_RATE_TYPE, limit),
@@ -498,7 +513,7 @@ async function loadAllCosmicArticles(limit: number): Promise<CosmicArticle[]> {
 
   return [...albumRates, ...albumReviews]
     .filter(hasBodyContent)
-    .sort((left, right) => getArticlePublishedSortValue(right) - getArticlePublishedSortValue(left))
+    .sort(compareForHighlight)
 }
 
 async function loadHomepageArticles(limit: number): Promise<HomepageArticle[]> {
@@ -508,7 +523,7 @@ async function loadHomepageArticles(limit: number): Promise<HomepageArticle[]> {
 
 export const getHomepageArticles = unstable_cache(
   async (limit: number = ARTICLE_LIST_LIMIT) => loadHomepageArticles(limit),
-  ["cosmic-homepage-articles-v4"],
+  ["cosmic-homepage-articles-v7"],
   { tags: [COSMIC_TAG] },
 )
 
@@ -519,22 +534,39 @@ async function loadAllArticles(limit: number): Promise<HomepageArticle[]> {
 
 export const getAllArticles = unstable_cache(
   async (limit: number = 50) => loadAllArticles(limit),
-  ["cosmic-all-articles-v4"],
+  ["cosmic-all-articles-v7"],
   { tags: [COSMIC_TAG] },
 )
+
+// Minimum article count we want every section page to display. If the
+// in-category set is smaller, pad with articles from other categories
+// up to this threshold so the page never feels empty. We deliberately
+// don't pad further — sections still need their own identity, so the
+// in-category articles always come first and only enough filler is
+// added to clear the threshold.
+const SECTION_MIN_ARTICLES = 6
 
 async function loadArticlesByCategory(
   category: ArticleCategory,
   limit: number,
 ): Promise<HomepageArticle[]> {
   const articles = await loadAllCosmicArticles(limit)
-  const filtered = articles.filter((a) => ARTICLE_CATEGORIES[a.slug] === category)
-  return filtered.slice(0, limit).map(normalizeHomepageArticle)
+  const inCategory = articles.filter((a) => ARTICLE_CATEGORIES[a.slug] === category)
+
+  let result: CosmicArticle[] = inCategory
+  if (inCategory.length < SECTION_MIN_ARTICLES) {
+    const needed = SECTION_MIN_ARTICLES - inCategory.length
+    const inCategoryIds = new Set(inCategory.map((a) => a.id))
+    const filler = articles.filter((a) => !inCategoryIds.has(a.id)).slice(0, needed)
+    result = [...inCategory, ...filler]
+  }
+
+  return result.slice(0, limit).map(normalizeHomepageArticle)
 }
 
 export const getArticlesByCategory = unstable_cache(
   async (category: ArticleCategory, limit: number = 50) =>
     loadArticlesByCategory(category, limit),
-  ["cosmic-articles-by-category-v4"],
+  ["cosmic-articles-by-category-v7"],
   { tags: [COSMIC_TAG] },
 )

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { motion } from "framer-motion"
 
 import type { HomepageArticle } from "@/lib/types"
@@ -391,7 +391,12 @@ function FeaturedCenterArticle({ article }: { article: HomepageArticle }) {
 /* ------------------------------------------------------------------ */
 /*  Main Homepage                                                      */
 /* ------------------------------------------------------------------ */
+// "More From BMR" grid shows this many cards before the user clicks
+// "see all" to expand the rest in place.
+const INITIAL_GRID_COUNT = 6
+
 export default function HomeClient({ articles }: { articles: HomepageArticle[] }) {
+  const [showAllGrid, setShowAllGrid] = useState(false)
 
   const {
     heroArticles,
@@ -534,7 +539,7 @@ export default function HomeClient({ articles }: { articles: HomepageArticle[] }
         <div className="max-w-[1400px] mx-auto">
           <h2 className="text-3xl font-bold mb-8">More From BMR</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {gridArticles.map((article) => (
+            {(showAllGrid ? gridArticles : gridArticles.slice(0, INITIAL_GRID_COUNT)).map((article) => (
               <ArticleCard key={article.id} article={article} />
             ))}
           </div>
@@ -544,14 +549,17 @@ export default function HomeClient({ articles }: { articles: HomepageArticle[] }
       {/* ============================================================ */}
       {/* SECTION F: See All                                            */}
       {/* ============================================================ */}
-      <section className="w-full text-center pb-16">
-        <Link
-          href="/reviews"
-          className="text-4xl font-bold hover:text-[var(--accent-reviews)] transition-colors"
-        >
-          see all
-        </Link>
-      </section>
+      {gridArticles.length > INITIAL_GRID_COUNT && !showAllGrid && (
+        <section className="w-full text-center pb-16">
+          <button
+            type="button"
+            onClick={() => setShowAllGrid(true)}
+            className="text-4xl font-bold hover:text-[var(--accent-reviews)] transition-colors cursor-pointer"
+          >
+            see all
+          </button>
+        </section>
+      )}
 
       {/* ============================================================ */}
       {/* SECTION G: Email Signup                                       */}
