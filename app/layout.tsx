@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, DM_Mono, DM_Sans } from "next/font/google";
+import { Inter, Bowlby_One } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -9,20 +9,10 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-const playfair = Playfair_Display({
+const bowlbyOne = Bowlby_One({
+  weight: ["400"],
   subsets: ["latin"],
-  variable: "--font-playfair",
-});
-
-const dmMono = DM_Mono({
-  weight: ["300", "400", "500"],
-  subsets: ["latin"],
-  variable: "--font-dm-mono",
-});
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-dm-sans",
+  variable: "--font-bowlby",
 });
 
 export const metadata: Metadata = {
@@ -38,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.className} ${playfair.variable} ${dmMono.variable} ${dmSans.variable} antialiased bg-white text-black`}
+        className={`${inter.variable} ${bowlbyOne.variable} antialiased bg-white text-black font-sans`}
       >
         <Navbar />
         {children}

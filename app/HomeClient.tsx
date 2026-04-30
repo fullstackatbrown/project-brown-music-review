@@ -64,8 +64,8 @@ function makeMockArticle(index: number): HomepageArticle {
     typeLabel: "Article",
     coverImage: null,
     ratingLabel: null,
-    accentColor: "#D20000",
-    labelColor: "#D20000",
+    accentColor: "var(--accent-reviews)",
+    labelColor: "var(--accent-reviews)",
     vinylLabel: "BMR",
   }
 }
@@ -118,9 +118,9 @@ function SpinningVinyl({ size = 620 }: { size?: number }) {
               "conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.04) 60deg, transparent 120deg, rgba(255,255,255,0.02) 240deg, transparent 360deg)",
           }}
         />
-        {/* Red label - 29% of disc */}
+        {/* Brand-red label - 29% of disc */}
         <div
-          className="absolute bg-[#D20000] rounded-full"
+          className="absolute bg-[var(--accent-reviews)] rounded-full"
           style={{
             width: "29%",
             height: "29%",
@@ -165,7 +165,7 @@ function ArticleCard({ article }: { article: HomepageArticle }) {
         )}
       </div>
       <div className="p-6">
-        <h3 className="text-xl font-bold leading-snug mb-2 group-hover:text-[#D20000] transition-colors line-clamp-2">
+        <h3 className="text-xl font-bold leading-snug mb-2 group-hover:text-[var(--accent-reviews)] transition-colors line-clamp-2">
           {article.title}
         </h3>
         <p className="text-sm text-neutral-500 mb-4 line-clamp-3 leading-relaxed">
@@ -206,10 +206,10 @@ function WideFeatureCard({ article }: { article: HomepageArticle }) {
         )}
       </div>
       <div className="p-8 flex flex-col justify-center">
-        <span className="text-xs font-mono tracking-widest uppercase text-[#D20000] mb-3">
+        <span className="text-xs font-mono tracking-widest uppercase text-[var(--accent-reviews)] mb-3">
           Featured
         </span>
-        <h3 className="text-2xl font-bold leading-snug mb-3 group-hover:text-[#D20000] transition-colors">
+        <h3 className="text-2xl font-bold leading-snug mb-3 group-hover:text-[var(--accent-reviews)] transition-colors">
           {article.title}
         </h3>
         <p className="text-sm text-neutral-500 mb-4 leading-relaxed line-clamp-4">
@@ -233,6 +233,14 @@ function WideFeatureCard({ article }: { article: HomepageArticle }) {
 /* ------------------------------------------------------------------ */
 function AutoScrollCarousel({ articles }: { articles: HomepageArticle[] }) {
   const labels = ["Deep Dive", "Narratives", "Hot Topics", "Opinions", "Deep Dive", "Narratives"]
+  // Each label gets its section's accent color so the carousel reads as a
+  // visual map of the magazine, not a wall of one color.
+  const labelAccents: Record<string, string> = {
+    "Deep Dive": "var(--accent-deepdive)",
+    "Narratives": "var(--accent-narratives)",
+    "Hot Topics": "var(--accent-hottopics)",
+    "Opinions": "var(--accent-opinions)",
+  }
 
   // Duplicate the items so the scroll can loop seamlessly. Because the two
   // copies are identical, when the animation wraps back to its start position
@@ -272,7 +280,10 @@ function AutoScrollCarousel({ articles }: { articles: HomepageArticle[] }) {
             <div className={`flex-shrink-0 ${article.slug ? "cursor-pointer" : ""}`} style={{ width: 240 }}>
               {/* Category pill */}
               <div className="flex justify-center mb-4">
-                <div className="h-[40px] px-8 bg-[#D20000] rounded-full flex items-center justify-center">
+                <div
+                  className="h-[40px] px-8 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: labelAccents[labels[i % labels.length]] }}
+                >
                   <span className="text-white text-lg font-semibold">
                     {labels[i % labels.length]}
                   </span>
@@ -355,7 +366,7 @@ function FeaturedCenterArticle({ article }: { article: HomepageArticle }) {
           <div className="w-full h-full bg-neutral-700" />
         )}
       </div>
-      <div className="h-[51px] px-10 bg-[#D20000] rounded-[30px] flex items-center justify-center mb-6">
+      <div className="h-[51px] px-10 bg-[var(--accent-deepdive)] rounded-[30px] flex items-center justify-center mb-6">
         <span className="text-white text-2xl font-normal">Deep Dive</span>
       </div>
       <h2 className="text-white text-3xl md:text-4xl font-bold mb-3 text-center">
@@ -473,7 +484,7 @@ export default function HomeClient({ articles }: { articles: HomepageArticle[] }
         <div className="flex-1 flex flex-col pt-6 pr-0 overflow-hidden">
           {/* Latest From heading */}
           <div className="pr-12 mb-8">
-            <h2 className="text-[clamp(48px,6vw,90px)] font-medium text-[#D20000] leading-none mb-3 text-right">
+            <h2 className="text-[clamp(48px,6vw,90px)] font-display text-[var(--accent-reviews)] leading-none mb-3 text-right">
               Latest From
             </h2>
             <div className="border-t-[5px] border-black w-full" />
@@ -536,7 +547,7 @@ export default function HomeClient({ articles }: { articles: HomepageArticle[] }
       <section className="w-full text-center pb-16">
         <Link
           href="/reviews"
-          className="text-4xl font-bold hover:text-[#D20000] transition-colors"
+          className="text-4xl font-bold hover:text-[var(--accent-reviews)] transition-colors"
         >
           see all
         </Link>

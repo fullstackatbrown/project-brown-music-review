@@ -115,12 +115,12 @@ function FeaturedArticle({ article }: { article: HomepageArticle }) {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="flex flex-col gap-6"
         >
-          <span className="text-xs font-mono tracking-widest uppercase text-[#D20000]">
+          <span className="text-xs font-mono tracking-widest uppercase text-[var(--accent-deepdive)]">
             Featured
           </span>
           <h2
-            className="text-4xl font-bold italic leading-tight"
-            style={{ fontFamily: "'Playfair Display', serif", color: article.accentColor }}
+            className="text-4xl leading-tight font-display tracking-wide"
+            style={{ color: article.accentColor }}
           >
             {article.title}
           </h2>
@@ -162,13 +162,10 @@ export default function DeepDiveClient({ articles }: { articles: HomepageArticle
         transition={{ duration: 0.8 }}
         className="px-12 pt-16 pb-10 border-b border-neutral-200"
       >
-        <span className="text-xs font-mono tracking-widest uppercase text-[#D20000] block mb-3">
+        <span className="text-xs font-mono tracking-widest uppercase text-[var(--accent-deepdive)] block mb-3">
           Brown Music Review
         </span>
-        <h1
-          className="text-6xl font-bold italic text-[#D20000] mb-4"
-          style={{ fontFamily: "'Playfair Display', serif" }}
-        >
+        <h1 className="text-6xl text-[var(--accent-deepdive)] mb-4 font-display tracking-wide">
           Deep Dive
         </h1>
         <motion.div
@@ -187,13 +184,10 @@ export default function DeepDiveClient({ articles }: { articles: HomepageArticle
 
       <div className="px-12 py-16">
         <div className="flex items-center gap-4 mb-12">
-          <h2
-            className="text-3xl font-bold italic"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
+          <h2 className="text-3xl font-display tracking-wide">
             All Deep Dives
           </h2>
-          <div className="h-[2px] w-10 bg-[#D20000]" />
+          <div className="h-[2px] w-10 bg-[var(--accent-deepdive)]" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-[1200px] mx-auto">
@@ -207,7 +201,7 @@ export default function DeepDiveClient({ articles }: { articles: HomepageArticle
             <motion.button
               whileHover={{ scale: 1.05 }}
               onClick={() => setDisplayedCount((prev) => Math.min(prev + 3, rest.length))}
-              className="px-8 py-3 text-sm font-mono tracking-widest uppercase bg-[#D20000] text-white rounded-none cursor-pointer"
+              className="px-8 py-3 text-sm font-mono tracking-widest uppercase bg-[var(--accent-deepdive)] text-white rounded-none cursor-pointer"
             >
               Load More
             </motion.button>

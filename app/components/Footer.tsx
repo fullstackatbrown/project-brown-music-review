@@ -29,7 +29,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               aria-label="Instagram"
             >
-              <FaInstagram className="hover:text-[#D20000] transition-colors" />
+              <FaInstagram className="hover:text-[var(--accent-reviews)] transition-colors" />
             </Link>
           </div>
         </div>

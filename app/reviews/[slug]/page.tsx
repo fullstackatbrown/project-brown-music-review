@@ -28,11 +28,11 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
           type label → title → divider → cover image → byline → divider → body */}
       <section className="bg-white px-6 sm:px-12 lg:px-16 py-12">
         <article className="mx-auto max-w-3xl">
-          <span className="mb-3 block text-xs font-mono tracking-widest uppercase text-red-600">
+          <span className="mb-3 block text-xs font-mono tracking-widest uppercase text-[var(--accent-reviews)]">
             {articleTypeLabel}
           </span>
 
-          <h1 className="mb-6 font-serif text-4xl font-bold leading-tight sm:text-5xl">
+          <h1 className="mb-6 font-display text-4xl leading-tight sm:text-5xl tracking-wide">
             {article.title}
           </h1>
 

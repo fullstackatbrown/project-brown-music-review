@@ -26,19 +26,19 @@ export default function EmailSignup() {
       flexDirection: "column",
       alignItems: "center",
       gap: "16px",
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "var(--font-sans), sans-serif",
     }}>
       <h2 style={{
-        fontFamily: "'Playfair Display', serif",
+        fontFamily: "var(--font-display), sans-serif",
         fontSize: "1.6rem",
-        fontWeight: 700,
         color: "#0a0a0a",
         margin: 0,
+        letterSpacing: "0.02em",
       }}>
         Never Miss a Review
       </h2>
       <p style={{
-        fontFamily: "'DM Mono', monospace",
+        fontFamily: "var(--font-sans), sans-serif",
         fontSize: "0.7rem",
         letterSpacing: "0.1em",
         color: "#888",
@@ -49,9 +49,9 @@ export default function EmailSignup() {
 
       {status === "success" ? (
         <p style={{
-          fontFamily: "'DM Mono', monospace",
+          fontFamily: "var(--font-sans), sans-serif",
           fontSize: "0.72rem",
-          color: "#e01010",
+          color: "var(--accent-reviews)",
           letterSpacing: "0.1em",
         }}>
           ✓ You&apos;re subscribed!
@@ -75,7 +75,7 @@ export default function EmailSignup() {
               flex: 1,
               padding: "12px 16px",
               border: "1.5px solid #0a0a0a",
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "var(--font-sans), sans-serif",
               fontSize: "0.78rem",
               outline: "none",
               background: "#fff",
@@ -89,7 +89,7 @@ export default function EmailSignup() {
               background: "#0a0a0a",
               color: "#fff",
               border: "none",
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "var(--font-sans), sans-serif",
               fontSize: "0.75rem",
               fontWeight: 500,
               letterSpacing: "0.12em",

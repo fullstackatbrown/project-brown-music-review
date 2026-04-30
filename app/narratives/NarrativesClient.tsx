@@ -138,7 +138,7 @@ function CarouselItem({ article }: { article: HomepageArticle }) {
       <div>
         <p
           style={{
-            fontFamily: "'Playfair Display', serif",
+            fontFamily: "var(--font-display), sans-serif",
             fontSize: "0.9rem",
             fontWeight: 700,
             fontStyle: "italic",
@@ -153,7 +153,7 @@ function CarouselItem({ article }: { article: HomepageArticle }) {
         </p>
         <p
           style={{
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "var(--font-sans), sans-serif",
             fontSize: "0.65rem",
             color: "#999",
             margin: 0,
@@ -209,7 +209,7 @@ function FeaturedSection({ article }: { article: HomepageArticle }) {
         >
           <h2
             style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
               fontWeight: 700,
               fontStyle: "italic",
@@ -222,7 +222,7 @@ function FeaturedSection({ article }: { article: HomepageArticle }) {
           </h2>
           <p
             style={{
-              fontFamily: "'DM Mono', monospace",
+              fontFamily: "var(--font-sans), sans-serif",
               fontSize: "0.7rem",
               letterSpacing: "0.15em",
               textTransform: "uppercase",
@@ -272,7 +272,7 @@ function FeaturedSection({ article }: { article: HomepageArticle }) {
           <div>
             <p
               style={{
-                fontFamily: "'DM Mono', monospace",
+                fontFamily: "var(--font-sans), sans-serif",
                 fontSize: "0.65rem",
                 letterSpacing: "0.15em",
                 textTransform: "uppercase",
@@ -284,7 +284,7 @@ function FeaturedSection({ article }: { article: HomepageArticle }) {
             </p>
             <p
               style={{
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "var(--font-sans), sans-serif",
                 fontSize: "0.95rem",
                 lineHeight: 1.7,
                 color: "#ccc",
@@ -298,7 +298,7 @@ function FeaturedSection({ article }: { article: HomepageArticle }) {
             whileHover={{ x: 8 }}
             transition={{ duration: 0.2 }}
             style={{
-              fontFamily: "'DM Mono', monospace",
+              fontFamily: "var(--font-sans), sans-serif",
               fontSize: "0.65rem",
               letterSpacing: "0.15em",
               textTransform: "uppercase",
@@ -393,7 +393,7 @@ function ArticleCard({
         <div>
           <h3
             style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontSize: "1.1rem",
               fontWeight: 700,
               fontStyle: "italic",
@@ -411,7 +411,7 @@ function ArticleCard({
           </h3>
           <p
             style={{
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "var(--font-sans), sans-serif",
               fontSize: "0.8rem",
               color: "#777",
               margin: 0,
@@ -434,7 +434,7 @@ function ArticleCard({
         >
           <p
             style={{
-              fontFamily: "'DM Mono', monospace",
+              fontFamily: "var(--font-sans), sans-serif",
               fontSize: "0.62rem",
               letterSpacing: "0.1em",
               textTransform: "uppercase",
@@ -478,9 +478,6 @@ export default function NarrativesClient({ articles }: { articles: HomepageArtic
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #fff; font-family: 'DM Sans', sans-serif; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #ddd; }
       `}</style>
@@ -514,7 +511,7 @@ export default function NarrativesClient({ articles }: { articles: HomepageArtic
             marginLeft: -150,
           }}
         >
-          <VinylDisc color="#c8102e" size={600} rotation={vinylRotation} />
+          <VinylDisc color="var(--accent-narratives)" size={600} rotation={vinylRotation} />
         </motion.div>
 
         <motion.div
@@ -531,11 +528,11 @@ export default function NarrativesClient({ articles }: { articles: HomepageArtic
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
             style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontSize: "clamp(3rem, 6vw, 4.2rem)",
               fontWeight: 700,
               fontStyle: "italic",
-              color: "#c8102e",
+              color: "var(--accent-narratives)",
               lineHeight: 1.1,
               marginBottom: 20,
             }}
@@ -561,7 +558,7 @@ export default function NarrativesClient({ articles }: { articles: HomepageArtic
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
             style={{
-              fontFamily: "'DM Mono', monospace",
+              fontFamily: "var(--font-sans), sans-serif",
               fontSize: "1.05rem",
               color: "#555",
               lineHeight: 1.8,
@@ -631,7 +628,7 @@ export default function NarrativesClient({ articles }: { articles: HomepageArtic
         >
           <h2
             style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontSize: "1.8rem",
               fontWeight: 700,
               fontStyle: "italic",
@@ -645,7 +642,7 @@ export default function NarrativesClient({ articles }: { articles: HomepageArtic
             style={{
               height: 2,
               width: 40,
-              background: "#c8102e",
+              background: "var(--accent-narratives)",
             }}
           />
         </motion.div>
@@ -685,11 +682,11 @@ export default function NarrativesClient({ articles }: { articles: HomepageArtic
                 )
               }
               style={{
-                fontFamily: "'DM Mono', monospace",
+                fontFamily: "var(--font-sans), sans-serif",
                 fontSize: "0.65rem",
                 letterSpacing: "0.15em",
                 textTransform: "uppercase",
-                background: "#c8102e",
+                background: "var(--accent-narratives)",
                 color: "#fff",
                 border: "none",
                 padding: "12px 32px",

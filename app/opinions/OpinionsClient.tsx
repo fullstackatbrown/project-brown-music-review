@@ -44,12 +44,12 @@ function FeaturedOpinion({ article }: { article: HomepageArticle }) {
   const inner = (
     <motion.div ref={ref} initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ duration: 0.6 }} className="w-full bg-black text-white" style={{ padding: "80px 48px" }}>
       <div className="max-w-[1000px] mx-auto flex flex-col items-center text-center gap-8">
-        <span className="text-xs font-mono tracking-widest uppercase text-[#D20000]">Featured</span>
-        <h2 className="text-5xl md:text-6xl font-bold italic leading-tight max-w-3xl" style={{ fontFamily: "'Playfair Display', serif" }}>&ldquo;{article.title}&rdquo;</h2>
-        <div className="w-16 h-[3px] bg-[#D20000]" />
+        <span className="text-xs font-mono tracking-widest uppercase text-[var(--accent-opinions)]">Featured</span>
+        <h2 className="text-5xl md:text-6xl leading-tight max-w-3xl font-display tracking-wide">&ldquo;{article.title}&rdquo;</h2>
+        <div className="w-16 h-[3px] bg-[var(--accent-opinions)]" />
         <p className="text-lg leading-relaxed text-neutral-300 max-w-2xl">{article.summary}</p>
         <p className="text-sm font-mono tracking-wide uppercase text-neutral-500">{article.reviewer} &middot; {article.year}</p>
-        <motion.span whileHover={{ scale: 1.05 }} className="px-8 py-3 bg-[#D20000] text-white text-sm font-mono tracking-widest uppercase inline-block">Read the Full Take &rarr;</motion.span>
+        <motion.span whileHover={{ scale: 1.05 }} className="px-8 py-3 bg-[var(--accent-opinions)] text-black text-sm font-mono tracking-widest uppercase inline-block">Read the Full Take &rarr;</motion.span>
       </div>
     </motion.div>
   );
@@ -66,8 +66,8 @@ export default function OpinionsClient({ articles }: { articles: HomepageArticle
   return (
     <>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }} className="px-12 pt-16 pb-10 border-b border-neutral-200">
-        <span className="text-xs font-mono tracking-widest uppercase text-[#D20000] block mb-3">Brown Music Review</span>
-        <h1 className="text-6xl font-bold italic text-[#D20000] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>Opinions</h1>
+        <span className="text-xs font-mono tracking-widest uppercase text-[var(--accent-opinions)] block mb-3">Brown Music Review</span>
+        <h1 className="text-6xl text-[var(--accent-opinions)] mb-4 font-display tracking-wide">Opinions</h1>
         <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.3, duration: 0.5 }} className="h-[3px] w-20 bg-black origin-left mb-6" />
         <p className="text-lg text-neutral-500 max-w-xl leading-relaxed">Bold takes, hot debates, and the arguments that keep us up at night. We don&apos;t do lukewarm.</p>
       </motion.div>
@@ -76,8 +76,8 @@ export default function OpinionsClient({ articles }: { articles: HomepageArticle
 
       <div className="px-12 py-16">
         <div className="flex items-center gap-4 mb-12">
-          <h2 className="text-3xl font-bold italic" style={{ fontFamily: "'Playfair Display', serif" }}>All Opinions</h2>
-          <div className="h-[2px] w-10 bg-[#D20000]" />
+          <h2 className="text-3xl font-display tracking-wide">All Opinions</h2>
+          <div className="h-[2px] w-10 bg-[var(--accent-opinions)]" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1200px] mx-auto">
           {rest.slice(0, displayedCount).map((article, idx) => (
@@ -86,7 +86,7 @@ export default function OpinionsClient({ articles }: { articles: HomepageArticle
         </div>
         {displayedCount < rest.length && (
           <div className="flex justify-center mt-12">
-            <motion.button whileHover={{ scale: 1.05 }} onClick={() => setDisplayedCount((prev) => Math.min(prev + 3, rest.length))} className="px-8 py-3 text-sm font-mono tracking-widest uppercase bg-[#D20000] text-white cursor-pointer">Load More</motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} onClick={() => setDisplayedCount((prev) => Math.min(prev + 3, rest.length))} className="px-8 py-3 text-sm font-mono tracking-widest uppercase bg-[var(--accent-opinions)] text-black cursor-pointer">Load More</motion.button>
           </div>
         )}
       </div>

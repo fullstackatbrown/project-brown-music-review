@@ -127,7 +127,7 @@ function SearchOverlay({
               </div>
               {/* Article info */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-white font-semibold text-lg leading-snug group-hover:text-[#D20000] transition-colors truncate">
+                <h3 className="text-white font-semibold text-lg leading-snug group-hover:text-[var(--accent-reviews)] transition-colors truncate">
                   {article.title}
                 </h3>
                 <p className="text-white/50 text-sm mt-1 truncate">
@@ -174,7 +174,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <div className="flex items-center justify-center mb-6">
-            <div className="text-white text-4xl font-bold tracking-widest italic uppercase">
+            <div className="text-white text-4xl tracking-widest uppercase font-display">
               BROWN MUSIC REVIEW
             </div>
           </div>
@@ -188,7 +188,7 @@ export default function Navbar() {
               <Link
                 href={page.path}
                 key={page.name}
-                className="text-white text-xl font-medium leading-[30px] hover:text-[#D20000] transition-colors"
+                className="text-white text-xl font-medium leading-[30px] hover:text-[var(--accent-reviews)] transition-colors"
               >
                 {page.name}
               </Link>

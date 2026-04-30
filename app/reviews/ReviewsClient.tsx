@@ -83,13 +83,10 @@ export default function ReviewsClient({ articles }: { articles: HomepageArticle[
         transition={{ duration: 0.8 }}
         className="px-12 pt-16 pb-10 border-b border-neutral-200"
       >
-        <span className="text-xs font-mono tracking-widest uppercase text-[#D20000] block mb-3">
+        <span className="text-xs font-mono tracking-widest uppercase text-[var(--accent-reviews)] block mb-3">
           Brown Music Review
         </span>
-        <h1
-          className="text-6xl font-bold italic text-[#D20000] mb-4"
-          style={{ fontFamily: "'Playfair Display', serif" }}
-        >
+        <h1 className="text-6xl text-[var(--accent-reviews)] mb-4 font-display tracking-wide">
           All Articles
         </h1>
         <motion.div
@@ -115,7 +112,7 @@ export default function ReviewsClient({ articles }: { articles: HomepageArticle[
             <motion.button
               whileHover={{ scale: 1.05 }}
               onClick={() => setDisplayedCount((prev) => Math.min(prev + 6, articles.length))}
-              className="px-8 py-3 text-sm font-mono tracking-widest uppercase bg-[#D20000] text-white rounded-none cursor-pointer"
+              className="px-8 py-3 text-sm font-mono tracking-widest uppercase bg-[var(--accent-reviews)] text-white rounded-none cursor-pointer"
             >
               Load More
             </motion.button>

@@ -3,7 +3,7 @@ import Image from "next/image";
 export default function About() {
   return (
     <div className="flex flex-col items-center px-6 py-12">
-      <span className="text-xs font-mono tracking-widest uppercase text-red-600 mb-2">
+      <span className="text-xs font-mono tracking-widest uppercase text-[var(--accent-reviews)] mb-2">
         About Us
       </span>
       <h2 className="text-4xl font-bold font-serif mb-2">
@@ -27,7 +27,7 @@ export default function About() {
         </p>
       </div>
 
-      <span className="text-xs font-mono tracking-widest uppercase text-red-600 mb-2 mt-10">
+      <span className="text-xs font-mono tracking-widest uppercase text-[var(--accent-reviews)] mb-2 mt-10">
         Meet our staff
       </span>
       <h2 className="text-4xl font-bold font-serif mb-8">
