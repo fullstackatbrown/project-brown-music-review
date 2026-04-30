@@ -20,10 +20,12 @@ const ALBUM_RATE_TYPES = new Set(["albumrate", "albumrates", "article"])
 const ALBUM_REVIEW_TYPES = new Set(["albumreview", "albumreviews"])
 
 // Shared cache tag for every Cosmic read. A single revalidateTag(COSMIC_TAG)
-// call (from the /api/revalidate webhook) invalidates all Cosmic-backed data
-// at once. The 1-hour revalidate is a safety net in case the webhook fails.
+// call (from the /api/revalidate webhook configured in Cosmic on Object
+// Published / Edited / Deleted) invalidates all Cosmic-backed data at once,
+// so the next visit re-fetches and re-renders fresh HTML. We deliberately
+// do NOT set a time-based `revalidate` on the unstable_cache wrappers —
+// the webhook is the single source of truth for cache freshness.
 export const COSMIC_TAG = "cosmic-content"
-const COSMIC_REVALIDATE_SECONDS = 60 * 60
 
 export type CosmicArticle = AlbumRate | AlbumReview
 
@@ -232,7 +234,7 @@ async function findArticleBySlug(slug: string): Promise<CosmicArticle | null> {
 export const getArticleBySlug = unstable_cache(
   async (slug: string) => findArticleBySlug(slug),
   ["cosmic-article-by-slug"],
-  { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
+  { tags: [COSMIC_TAG] },
 )
 
 export function getArticleBodyFormat<T extends CosmicArticle>(
@@ -507,7 +509,7 @@ async function loadHomepageArticles(limit: number): Promise<HomepageArticle[]> {
 export const getHomepageArticles = unstable_cache(
   async (limit: number = ARTICLE_LIST_LIMIT) => loadHomepageArticles(limit),
   ["cosmic-homepage-articles-v4"],
-  { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
+  { tags: [COSMIC_TAG] },
 )
 
 async function loadAllArticles(limit: number): Promise<HomepageArticle[]> {
@@ -518,7 +520,7 @@ async function loadAllArticles(limit: number): Promise<HomepageArticle[]> {
 export const getAllArticles = unstable_cache(
   async (limit: number = 50) => loadAllArticles(limit),
   ["cosmic-all-articles-v4"],
-  { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
+  { tags: [COSMIC_TAG] },
 )
 
 async function loadArticlesByCategory(
@@ -534,5 +536,5 @@ export const getArticlesByCategory = unstable_cache(
   async (category: ArticleCategory, limit: number = 50) =>
     loadArticlesByCategory(category, limit),
   ["cosmic-articles-by-category-v4"],
-  { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
+  { tags: [COSMIC_TAG] },
 )

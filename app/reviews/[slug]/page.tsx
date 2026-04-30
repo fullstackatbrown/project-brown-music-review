@@ -1,4 +1,5 @@
 import {
+  getAllArticles,
   getArticleBySlug,
   getArticleCoverImageUrl,
   getArticlePublishedDateDisplay,
@@ -8,6 +9,15 @@ import {
 import ArticleBody from "@/app/components/ArticleBody"
 import Image from "next/image"
 import { notFound } from "next/navigation"
+
+// Pre-render every published article at build time. The /api/revalidate
+// webhook (driven by Cosmic on Object Published / Edited / Deleted) calls
+// revalidateTag(COSMIC_TAG), which invalidates the unstable_cache wrappers
+// in lib/cosmic.ts so the next visit re-fetches and re-renders fresh HTML.
+export async function generateStaticParams() {
+  const articles = await getAllArticles(50)
+  return articles.map((article) => ({ slug: article.slug }))
+}
 
 export default async function ReviewPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
