@@ -87,19 +87,43 @@ const REVIEW_STYLE: AccentStyle = {
 // The space in the filename is URL-encoded so Next.js Image accepts it.
 const FALLBACK_COVER_URL = "/BMR%20STICKER.png"
 
-// Category assignments for articles. Maps slug → page category so each
-// subpage shows different content. Articles not listed here appear on all pages.
-export type ArticleCategory = "deepdive" | "narratives" | "hottopics" | "opinions"
+// Category assignments for articles. Maps slug → page section so each
+// subpage shows the articles assigned to it. Every published Cosmic slug
+// should appear here — articles without an entry will not render on any
+// section page (only on the homepage feed).
+export type ArticleCategory =
+  | "reviews"
+  | "deepdive"
+  | "narratives"
+  | "hottopics"
+  | "opinions"
 
 const ARTICLE_CATEGORIES: Record<string, ArticleCategory> = {
+  // Deep dive
   "everything-in-its-right-place-and-time-radiohead-before-and-after-2000": "deepdive",
   "jim-legxacy-the-new-david-bowie": "deepdive",
+  "listening-back-to-pieces-of-a-man": "deepdive",
+
+  // Narratives
   "an-ode-to-a-place": "narratives",
   "what-was-that": "narratives",
+
+  // Hot topics
   "bmrs-music-of-2025": "hottopics",
   "spring-weekend-listicle": "hottopics",
+
+  // Opinions
   "for-melancholy-brunettes-and-sad-women-japanese-breakfast": "opinions",
   "through-the-wall": "opinions",
+
+  // Reviews (album rates and album reviews — the default home for
+  // anything that isn't a long-form essay, narrative, hot take, or opinion)
+  "xavier-review": "reviews",
+  "wuthering-heights-review": "reviews",
+  "afterglow-review": "reviews",
+  "growing-pains-and-falling-in-love-foragers-even-a-child-can-cover-the-sun-with-a-finger": "reviews",
+  "mayhem": "reviews",
+  "virgin-review": "reviews",
 }
 
 let cosmicClient: ReturnType<typeof createBucketClient> | null = null
@@ -181,11 +205,12 @@ export async function getAlbumReviewBySlug(slug: string): Promise<AlbumReview | 
 
 async function findArticleBySlug(slug: string): Promise<CosmicArticle | null> {
   try {
+    // Published only — same reasoning as getArticlesByType. We never
+    // want to render an article that isn't ready to ship.
     const { object } = await getCosmicClient().objects
       .findOne({
         slug,
       })
-      .status("any")
       .depth(1)
 
     const article = (object as CosmicArticle | null) ?? null
@@ -422,9 +447,12 @@ async function getArticlesByType<T extends CosmicArticle>(
   limit: number,
 ): Promise<T[]> {
   try {
+    // Default Cosmic status (published only) — never .status("any") on a
+    // list fetcher: that pulls draft revisions whose body fields can be
+    // empty mid-edit, which then get silently dropped by hasBodyContent
+    // and the article disappears from every section page.
     const { objects } = await getCosmicClient().objects
       .find({ type })
-      .status("any")
       .limit(limit)
 
     return (objects as T[]) ?? []
@@ -478,7 +506,7 @@ async function loadHomepageArticles(limit: number): Promise<HomepageArticle[]> {
 
 export const getHomepageArticles = unstable_cache(
   async (limit: number = ARTICLE_LIST_LIMIT) => loadHomepageArticles(limit),
-  ["cosmic-homepage-articles-v3"],
+  ["cosmic-homepage-articles-v4"],
   { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
 )
 
@@ -489,7 +517,7 @@ async function loadAllArticles(limit: number): Promise<HomepageArticle[]> {
 
 export const getAllArticles = unstable_cache(
   async (limit: number = 50) => loadAllArticles(limit),
-  ["cosmic-all-articles-v3"],
+  ["cosmic-all-articles-v4"],
   { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
 )
 
@@ -505,6 +533,6 @@ async function loadArticlesByCategory(
 export const getArticlesByCategory = unstable_cache(
   async (category: ArticleCategory, limit: number = 50) =>
     loadArticlesByCategory(category, limit),
-  ["cosmic-articles-by-category-v3"],
+  ["cosmic-articles-by-category-v4"],
   { revalidate: COSMIC_REVALIDATE_SECONDS, tags: [COSMIC_TAG] },
 )

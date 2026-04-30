@@ -1,7 +1,7 @@
 import { getAllArticles, getArticlesByCategory, type ArticleCategory } from "@/lib/cosmic"
 import { NextRequest, NextResponse } from "next/server"
 
-const VALID_CATEGORIES = new Set(["deepdive", "narratives", "hottopics", "opinions"])
+const VALID_CATEGORIES = new Set(["reviews", "deepdive", "narratives", "hottopics", "opinions"])
 
 export async function GET(request: NextRequest) {
   try {
