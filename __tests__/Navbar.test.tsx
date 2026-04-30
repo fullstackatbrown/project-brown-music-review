@@ -8,10 +8,9 @@ describe("Navbar", () => {
     expect(screen.getByText("BROWN MUSIC REVIEW")).toBeInTheDocument()
   })
 
-  it("renders a Subscribe button", () => {
+  it("does not render a Subscribe button", () => {
     render(<Navbar />)
-    const btn = screen.getByRole("link", { name: /subscribe/i })
-    expect(btn).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: /subscribe/i })).not.toBeInTheDocument()
   })
 
   it("renders correct navigation links", () => {

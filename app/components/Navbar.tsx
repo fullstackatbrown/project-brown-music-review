@@ -194,14 +194,6 @@ export default function Navbar() {
               </Link>
             ))}
           </div>
-
-          {/* Subscribe Button */}
-          <Link
-            href="/subscribe"
-            className="absolute right-10 top-10 bg-[#D20000] px-6 h-[52px] rounded-lg shadow-sm flex items-center justify-center hover:bg-red-700 transition-colors"
-          >
-            <span className="text-white text-base font-medium">Subscribe</span>
-          </Link>
         </div>
       </div>
 
